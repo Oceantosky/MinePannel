@@ -597,6 +597,11 @@ public static partial class Config
         /// 启动时自动检查更新并同步。
         /// </summary>
         [ConfigItem<bool>("CloudAutoSync", true)] public partial bool AutoSync { get; set; }
+
+        /// <summary>
+        /// 已弹窗提示标记的服务器。
+        /// </summary>
+        [ConfigItem<string>("CloudMarkOfferedServer", "")] public partial string MarkOfferedServer { get; set; }
     }
 
     /// <summary>

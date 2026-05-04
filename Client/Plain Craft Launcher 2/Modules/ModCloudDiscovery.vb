@@ -181,17 +181,8 @@ Friend Module ModCloudDiscovery
         ' 3. 检查预授权状态（纯 API 调用，可在后台线程执行）
         Dim needsPreAuth As Boolean = ModCloudAuth.CheckPreAuthStatus(serverUrl) AndAlso Not ModCloudAuth.IsBound
         If needsPreAuth Then
-            ' 在 UI 线程显示预授权对话框，用 ManualResetEvent 阻塞后台线程等待
-            Dim waitHandle As New Threading.ManualResetEvent(False)
-            Dim authResult As Boolean = False
-            RunInUi(Sub()
-                Try
-                    authResult = ModCloudAuth.ShowPreAuthDialog(serverUrl)
-                Finally
-                    waitHandle.Set()
-                End Try
-            End Sub)
-            waitHandle.WaitOne()
+            ' 预授权对话框内部已处理 UI 线程切换，直接在当前线程调用即可
+            Dim authResult As Boolean = ModCloudAuth.ShowPreAuthDialog(serverUrl)
             If Not authResult Then
                 errorMessage = "设备认证未完成"
                 Return False

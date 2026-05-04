@@ -1,6 +1,6 @@
 Imports System.IO.Compression
-Imports System.Security.Cryptography
 Imports System.Text.RegularExpressions
+Imports System.Collections.Concurrent
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports Newtonsoft.Json.Linq
@@ -249,6 +249,7 @@ Friend Module ModMinePannel
             ' 3. 对比 hash，仅下载变更文件（并行）
             Dim baseUrl As String = GetBaseUrlFromManifest(manifestUrl)
             Dim changedCount As Integer = 0
+            Dim failedFiles As New Concurrent.ConcurrentBag(Of String)
 
             Dim parallelOpts As New ParallelOptions With {
                 .MaxDegreeOfParallelism = MaxConcurrentSyncDownloads
@@ -262,7 +263,7 @@ Friend Module ModMinePannel
                     ' 计算本地文件 SHA256
                     Dim localHash As String = Nothing
                     If File.Exists(localPath) Then
-                        localHash = ComputeFileSHA256(localPath)
+                        localHash = ModCloudInfo.ComputeFileSHA256(localPath)
                     End If
 
                     ' Hash 一致则跳过
@@ -277,12 +278,24 @@ Friend Module ModMinePannel
                     Dim fileUrl As String = $"{baseUrl}/{relPath}"
                     Try
                         ModNet.NetDownloadByLoader(fileUrl, tempPath)
+                        ' Verify SHA256 after download
+                        Dim downloadedHash As String = ModCloudInfo.ComputeFileSHA256(tempPath)
+                        If String.IsNullOrEmpty(downloadedHash) OrElse Not String.Equals(downloadedHash, mf.Hash, StringComparison.OrdinalIgnoreCase) Then
+                            Log($"[MinePannel] 文件校验失败，期望 SHA256={mf.Hash}，实际={If(downloadedHash, "读取失败")}：{relPath}")
+                            Try : File.Delete(tempPath) : Catch : End Try
+                            failedFiles.Add(relPath)
+                            Return
+                        End If
                         Interlocked.Increment(changedCount)
                     Catch ex As Exception
                         Log("[MinePannel] 下载文件失败：" & relPath & "：" & ex.Message)
+                        failedFiles.Add(relPath)
                     End Try
                 End Sub)
 
+            If failedFiles.Count > 0 Then
+                Log($"[MinePannel] 共 {failedFiles.Count} 个文件下载/校验失败：{String.Join(", ", failedFiles)}")
+            End If
             Log($"[MinePannel] 共 {changedCount} 个文件需要更新")
 
             ' 4. 清理本地冗余文件（在受控目录中，但不在 Manifest 中的文件）
@@ -400,7 +413,7 @@ Friend Module ModMinePannel
         Dim idMatch As Match = System.Text.RegularExpressions.Regex.Match(query, "id=([^&]+)")
         If idMatch.Success Then
             Dim instanceId As String = idMatch.Groups(1).Value
-            Return $"{uri.Scheme}://{uri.Host}:55001/sync/{instanceId}/files"
+            Return $"{uri.Scheme}://{uri.Authority}/sync/{instanceId}/files"
         End If
 
         ' Fallback: 去掉路径末尾的文件名
@@ -441,8 +454,8 @@ Friend Module ModMinePannel
 
                 ' SHA256 校验后替换
                 If File.Exists(dstFile) Then
-                    Dim srcHash As String = ComputeFileSHA256(filePath)
-                    Dim dstHash As String = ComputeFileSHA256(dstFile)
+                    Dim srcHash As String = ModCloudInfo.ComputeFileSHA256(filePath)
+                    Dim dstHash As String = ModCloudInfo.ComputeFileSHA256(dstFile)
                     If String.Equals(srcHash, dstHash, StringComparison.OrdinalIgnoreCase) Then
                         File.Delete(filePath)
                         Continue For
@@ -482,21 +495,6 @@ Friend Module ModMinePannel
     ''' <summary>Manifest 增量同步地址</summary>
     Public CloudManifestUrl As String = ""
 
-    ''' <summary>
-    ''' 计算文件的 SHA256 哈希值（hex 字符串）。
-    ''' </summary>
-    Public Function ComputeFileSHA256(filePath As String) As String
-        Try
-            Using sha As SHA256 = SHA256.Create()
-                Using stream As FileStream = File.OpenRead(filePath)
-                    Dim hashBytes As Byte() = sha.ComputeHash(stream)
-                    Return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant()
-                End Using
-            End Using
-        Catch
-            Return Nothing
-        End Try
-    End Function
 
 #End Region
 

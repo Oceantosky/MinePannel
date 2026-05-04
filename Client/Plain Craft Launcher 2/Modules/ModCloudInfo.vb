@@ -66,7 +66,7 @@ Friend Module ModCloudInfo
 
             For Each file In Directory.GetFiles(dir, "*", SearchOption.AllDirectories)
                 Dim relPath = Path.GetRelativePath(instanceDir, file).Replace("\"c, "/"c)
-                Dim hash = ComputeSha256(file)
+                Dim hash = ComputeFileSHA256(file)
                 Dim size = New FileInfo(file).Length
                 info.Files(relPath) = New CloudFileEntry With {.Hash = hash, .Size = size}
             Next
@@ -137,15 +137,19 @@ Friend Module ModCloudInfo
     End Function
 
     ''' <summary>
-    ''' 计算文件的 SHA256 哈希值并返回十六进制字符串。
+    ''' 计算文件的 SHA256 哈希值并返回十六进制字符串。失败返回空字符串。
     ''' </summary>
-    Private Function ComputeSha256(filePath As String) As String
-        Using sha = SHA256.Create()
-            Using fs = File.OpenRead(filePath)
-                Dim hash = sha.ComputeHash(fs)
-                Return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant()
+    Public Function ComputeFileSHA256(filePath As String) As String
+        Try
+            Using sha = SHA256.Create()
+                Using fs = File.OpenRead(filePath)
+                    Dim hash = sha.ComputeHash(fs)
+                    Return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant()
+                End Using
             End Using
-        End Using
+        Catch
+            Return ""
+        End Try
     End Function
 
 End Module
