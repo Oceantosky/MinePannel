@@ -43,21 +43,24 @@ Friend Module ModCloudMatch
 
             If items IsNot Nothing AndAlso items.Type = JTokenType.Array Then
                 For Each instance In items.Children(Of JObject)()
-                    Dim cloudInfo As New ModCloudInfo.CloudInfo With {
+                    Dim files As New Dictionary(Of String, ModCloudInfo.CloudFileEntry)
+                    Dim modListNode As JToken = instance("mod_list")
+                    If modListNode IsNot Nothing AndAlso modListNode.Type = JTokenType.Array Then
+                        For Each modName As JToken In modListNode
+                            Dim fileName As String = modName.Value(Of String)()
+                            files("mods/" & fileName) = New ModCloudInfo.CloudFileEntry With {
+                                .Hash = "",
+                                .Size = 0
+                            }
+                        Next
+                    End If
+                    result.Add(New ModCloudInfo.CloudInfo With {
                         .InstanceId = If(instance("id") IsNot Nothing, instance("id").Value(Of String)(), ""),
+                        .VersionId = If(instance("version_id") IsNot Nothing, instance("version_id").Value(Of String)(), ""),
                         .McVersion = If(instance("mc_version") IsNot Nothing, instance("mc_version").Value(Of String)(), ""),
                         .Modloader = If(instance("modloader") IsNot Nothing, instance("modloader").Value(Of String)(), ""),
-                        .Files = New Dictionary(Of String, ModCloudInfo.CloudFileEntry)
-                    }
-                    If Not String.IsNullOrEmpty(cloudInfo.InstanceId) Then
-                        ' 拉取完整信息库以获取 mod 列表
-                        Dim fullInfo = ModCloudInfo.FetchRemoteInfo(serverUrl, cloudInfo.InstanceId)
-                        If fullInfo IsNot Nothing Then
-                            result.Add(fullInfo)
-                        Else
-                            result.Add(cloudInfo)
-                        End If
-                    End If
+                        .Files = files
+                    })
                 Next
             End If
         Catch ex As Exception

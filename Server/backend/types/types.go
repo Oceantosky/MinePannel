@@ -49,10 +49,12 @@ type InstanceMetadata struct {
 
 // Instance is the public-facing instance representation.
 type Instance struct {
-	ID          string `json:"id"`
-	DisplayName string `json:"display_name"`
-	Status      string `json:"status"`
-	FullPackURL string `json:"full_pack_url"`
-	McVersion   string `json:"mc_version"`
-	Modloader   string `json:"modloader"`
+	ID          string   `json:"id"`
+	DisplayName string   `json:"display_name"`
+	Status      string   `json:"status"`
+	FullPackURL string   `json:"full_pack_url"`
+	McVersion   string   `json:"mc_version"`
+	Modloader   string   `json:"modloader"`
+	VersionID   string   `json:"version_id"`
+	ModList     []string `json:"mod_list"`
 }

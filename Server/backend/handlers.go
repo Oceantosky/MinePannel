@@ -90,11 +90,21 @@ func listInstancesHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		// Scheme-less URL — PCL client prepends https:// or http:// as negotiated
+		/// Scheme-less URL — PCL client prepends https:// or http:// as negotiated
 		u := fmt.Sprintf("%s:%d/sync/%s/releases/%s", s.Config().PublicIP, s.Config().BusinessPort, id, f)
 		if s.Config().DistPolicy == "cdn" && meta.CDNLink != "" {
 			u = meta.CDNLink
 		}
+		// Collect mod filenames for client-side matching (avoids N+1 /info calls)
+		var modList []string
+		if entries, err := os.ReadDir(filepath.Join(".", "instances", id, "files", "mods")); err == nil {
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasSuffix(strings.ToLower(e.Name()), ".jar") {
+					modList = append(modList, e.Name())
+				}
+			}
+		}
+
 		list = append(list, types.Instance{
 			ID:          id,
 			DisplayName: meta.DisplayName,
@@ -102,6 +112,8 @@ func listInstancesHandler(w http.ResponseWriter, r *http.Request) {
 			FullPackURL: u,
 			McVersion:   meta.McVersion,
 			Modloader:   meta.ModLoader,
+			VersionID:   meta.ActiveVersion,
+			ModList:     modList,
 		})
 	}
 	sendSuccess(w, map[string]any{"instance_list": list})

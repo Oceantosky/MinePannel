@@ -22,6 +22,8 @@ Friend Module ModCloudDiscovery
         Public Property PlayerCount As Integer
         Public Property PackUrl As String
         Public Property IconUrl As String
+        Public Property VersionId As String
+        Public Property ModList As List(Of String)
     End Class
 
     ''' <summary>
@@ -133,6 +135,13 @@ Friend Module ModCloudDiscovery
 
             If items IsNot Nothing AndAlso items.Type = JTokenType.Array Then
                 For Each item As JObject In items.Children(Of JObject)()
+                    Dim modList As New List(Of String)()
+                    Dim modListNode As JToken = item("mod_list")
+                    If modListNode IsNot Nothing AndAlso modListNode.Type = JTokenType.Array Then
+                        For Each modName As JToken In modListNode
+                            modList.Add(modName.Value(Of String)())
+                        Next
+                    End If
                     instances.Add(New CloudInstance With {
                         .Id = If(item("id") IsNot Nothing, item("id").Value(Of String)(), ""),
                         .Name = If(item("display_name") IsNot Nothing, item("display_name").Value(Of String)(), ""),
@@ -140,7 +149,9 @@ Friend Module ModCloudDiscovery
                         .Description = "",
                         .PlayerCount = 0,
                         .PackUrl = If(item("full_pack_url") IsNot Nothing, item("full_pack_url").Value(Of String)(), ""),
-                        .IconUrl = ""
+                        .IconUrl = "",
+                        .VersionId = If(item("version_id") IsNot Nothing, item("version_id").Value(Of String)(), ""),
+                        .ModList = modList
                     })
                 Next
             End If
