@@ -1,0 +1,22 @@
+{
+  "node_name": "Silicon_Valley_Slave",
+  "role": "slave",
+  "secret_key": "CloudAbroad_Secret_2026",
+  "public_ip": "192.168.100.102",
+  "dist_policy": "direct",
+  "jwt_secret": "CloudAbroad_JWT_e6a099c3",
+  "nodes": [
+    {
+      "name": "bj",
+      "display_name": "Master",
+      "ip": "192.168.100.101",
+      "flag": "CN"
+    },
+    {
+      "name": "sv",
+      "display_name": "Slave",
+      "ip": "127.0.0.1",
+      "flag": "US"
+    }
+  ]
+}

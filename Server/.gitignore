@@ -1,0 +1,22 @@
+# Binaries
+*.exe
+pcl-sync-master
+cloudabroad-v6
+cloudsync-v6
+cloudabroad-server
+cloudabroad-server-linux
+pclce-server
+
+# Config
+config.json
+deploy/config.json
+
+# Builds
+*.zip
+*.tar.gz
+dist/
+dist_from_server/
+
+# Database & Logs
+*.db
+*_hash.txt

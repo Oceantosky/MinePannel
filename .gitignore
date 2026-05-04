@@ -1,0 +1,10 @@
+# Ignore audit reports, development logs, and private keys
+/inspect_report/
+/Client_inspect_report/
+/develop_logs/
+/ssh_logins/
+/TempPCLTest/
+
+# Ignore temporary and loose files
+implementation_plan.md
+web.tar.gz

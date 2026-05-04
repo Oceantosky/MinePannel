@@ -1,0 +1,25 @@
+{
+  "node_name": "node-01",
+  "role": "master",
+  "secret_key": "REPLACE_WITH_A_RANDOM_64_CHAR_HEX_STRING",
+  "public_ip": "192.168.1.100",
+  "dist_policy": "round_robin",
+  "jwt_secret": "REPLACE_WITH_A_RANDOM_64_CHAR_HEX_STRING",
+  "pre_auth_secret": "REPLACE_WITH_A_RANDOM_64_CHAR_HEX_STRING",
+  "pre_auth_enabled": false,
+  "trusted_proxy": false,
+  "nodes": [
+    {
+      "name": "node-01",
+      "display_name": "Master",
+      "ip": "192.168.1.100",
+      "flag": "master"
+    },
+    {
+      "name": "node-02",
+      "display_name": "Slave EU",
+      "ip": "192.168.1.101",
+      "flag": "eu"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "node_name": "Beijing_Master",
+  "role": "master",
+  "secret_key": "CloudAbroad_Secret_2026",
+  "public_ip": "192.168.100.101",
+  "dist_policy": "cdn",
+  "jwt_secret": "CloudAbroad_JWT_e6a099c3",
+  "nodes": [
+    {
+      "name": "bj",
+      "display_name": "Master",
+      "ip": "127.0.0.1",
+      "flag": "CN"
+    },
+    {
+      "name": "sv",
+      "display_name": "Slave",
+      "ip": "192.168.100.102",
+      "flag": "US"
+    }
+  ]
+}
