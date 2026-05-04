@@ -57,7 +57,7 @@ Public Class PageInstanceOverall
             Next
         End If
 
-        UpdateCloudSyncButtonState()
+        UpdateMinePannelButtonState()
         AniControlEnabled -= 1
     End Sub
 
@@ -429,7 +429,7 @@ Public Class PageInstanceOverall
     End Sub
 
     '与云端同步 / 取消自动同步
-    Private Sub BtnManageCloudSync_Click(sender As Object, e As EventArgs) Handles BtnManageCloudSync.Click
+    Private Sub BtnManageMinePannel_Click(sender As Object, e As EventArgs) Handles BtnManageMinePannel.Click
         Dim inst = PageInstanceLeft.Instance
         If inst Is Nothing Then Return
         Dim isSynced = File.Exists(System.IO.Path.Combine(inst.PathInstance, "PCL", "cloud_info.json"))
@@ -445,7 +445,7 @@ Public Class PageInstanceOverall
                     If File.Exists(infoPath) Then File.Delete(infoPath)
                     If File.Exists(iniPath) Then File.Delete(iniPath)
                     Hint("已取消云端同步！", HintType.Finish)
-                    UpdateCloudSyncButtonState()
+                    UpdateMinePannelButtonState()
                 Catch ex As Exception
                     Log(ex, "取消云端同步失败")
                 End Try
@@ -517,7 +517,7 @@ Public Class PageInstanceOverall
                                     Sub()
                                         If marked Then
                                             Hint($"已将「{inst.Name}」标记为云端同步！", HintType.Finish)
-                                            UpdateCloudSyncButtonState()
+                                            UpdateMinePannelButtonState()
                                         Else
                                             Hint("标记失败，请检查日志", HintType.Critical)
                                         End If
@@ -548,7 +548,7 @@ Public Class PageInstanceOverall
                                     Sub()
                                         If marked Then
                                             Hint($"已将「{inst.Name}」标记为云端同步！", HintType.Finish)
-                                            UpdateCloudSyncButtonState()
+                                            UpdateMinePannelButtonState()
                                         Else
                                             Hint("标记失败，请检查日志", HintType.Critical)
                                         End If
@@ -562,18 +562,18 @@ Public Class PageInstanceOverall
                     waitHandle.WaitOne()
                 End If
             Catch ex As Exception
-                Log(ex, "[CloudUI] BtnManageCloudSync 异常")
+                Log(ex, "[CloudUI] BtnManageMinePannel 异常")
                 RunInUi(Sub() Hint("标记过程发生异常，请查看日志", HintType.Critical))
             End Try
         End Sub, "Cloud Mark Instance Toggle")
     End Sub
 
     ' 更新按钮文本状态
-    Private Sub UpdateCloudSyncButtonState()
+    Private Sub UpdateMinePannelButtonState()
         Dim inst = PageInstanceLeft.Instance
         If inst Is Nothing Then Return
         Dim isSynced = File.Exists(System.IO.Path.Combine(inst.PathInstance, "PCL", "cloud_info.json"))
-        BtnManageCloudSync.Text = If(isSynced, "取消自动同步", "与云端同步")
+        BtnManageMinePannel.Text = If(isSynced, "取消自动同步", "与云端同步")
     End Sub
 
     '删除实例

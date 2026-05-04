@@ -2,8 +2,8 @@ package main
 
 import (
 	"archive/zip"
-	"cloudsync-v6/cas"
-	"cloudsync-v6/types"
+	"minepannel-v6/cas"
+	"minepannel-v6/types"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -640,7 +640,7 @@ func zipSource(id, src, dst string, meta types.InstanceMetadata) error {
   "manifestVersion": 1,
   "name": "%s",
   "version": "1.0.0",
-  "author": "CloudSync",
+  "author": "MinePannel",
   "files": [],
   "overrides": "overrides"
 }`, meta.McVersion, loaderArray, meta.DisplayName)

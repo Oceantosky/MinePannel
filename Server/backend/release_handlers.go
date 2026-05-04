@@ -2,8 +2,8 @@ package main
 
 import (
 	"archive/zip"
-	"cloudsync-v6/cas"
-	"cloudsync-v6/types"
+	"minepannel-v6/cas"
+	"minepannel-v6/types"
 	"encoding/json"
 	"fmt"
 	"io"

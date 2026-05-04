@@ -359,7 +359,7 @@ Refresh:
                         Sub()
                             Try
                                 Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={cloudInfo.InstanceId}"
-                                Dim success = ModCloudSync.IncrementalSync(manifestUrl, instanceDir)
+                                Dim success = ModMinePannel.IncrementalSync(manifestUrl, instanceDir)
                                 RunInUi(
                                 Sub()
                                     If success Then
@@ -533,15 +533,15 @@ Refresh:
         Dim selectedIndex As Integer? = MyMsgBoxSelect(selections, "选择云端实例", "同步", "取消")
         If selectedIndex.HasValue Then
             Dim inst As ModCloudDiscovery.CloudInstance = instances(selectedIndex.Value)
-            StartCloudSync(inst)
+            StartMinePannel(inst)
         End If
     End Sub
 
-    Private Sub StartCloudSync(inst As ModCloudDiscovery.CloudInstance)
-        Log($"[CloudSync] 用户选择云端实例：{inst.Name}（{inst.Version}）")
+    Private Sub StartMinePannel(inst As ModCloudDiscovery.CloudInstance)
+        Log($"[MinePannel] 用户选择云端实例：{inst.Name}（{inst.Version}）")
 
         If Not String.IsNullOrEmpty(inst.PackUrl) Then
-            Dim packUrl As String = ModCloudSync.NegotiateCloudSyncUrl(inst.PackUrl)
+            Dim packUrl As String = ModMinePannel.NegotiateMinePannelUrl(inst.PackUrl)
             If String.IsNullOrEmpty(packUrl) Then Return
             
             Dim tempZip As String = PathTemp & "cloud_pack_" & GetUuid() & ".zip"
@@ -611,12 +611,12 @@ Refresh:
                                           $"是否直接绑定此云端实例并开始增量同步？"
                                 If MyMsgBox(msg, "发现可同步的云端实例", "绑定并同步", "忽略") = 1 Then
                                     ' 写入绑定信息
-                                    Setup.Set("CloudSyncInstanceId", m.CloudInfo.InstanceId)
-                                    Setup.Set("CloudSyncInstanceName", m.CloudInfo.InstanceId)
+                                    Setup.Set("MinePannelInstanceId", m.CloudInfo.InstanceId)
+                                    Setup.Set("MinePannelInstanceName", m.CloudInfo.InstanceId)
                                     ' 执行增量同步
                                     Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={m.CloudInfo.InstanceId}"
                                     Dim instanceDir As String = McInstanceSelected.PathInstance
-                                    ModCloudSync.IncrementalSync(manifestUrl, instanceDir)
+                                    ModMinePannel.IncrementalSync(manifestUrl, instanceDir)
                                     Hint("云端实例已成功绑定，并且增量同步已启动！", HintType.Finish)
                                 End If
                             Finally
@@ -733,7 +733,7 @@ Refresh:
                 If cloudInfo IsNot Nothing Then
                     Try
                         Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={cloudInfo.InstanceId}"
-                        If ModCloudSync.IncrementalSync(manifestUrl, instanceDir) Then
+                        If ModMinePannel.IncrementalSync(manifestUrl, instanceDir) Then
                             updatedCount += 1
                         End If
                     Catch ex As Exception
@@ -768,12 +768,9 @@ Refresh:
         ModCloudAuth.CloudServerUrl = ""
         ModCloudAuth.CloudLastDomain = ""
         ShowCloudDisconnected()
-        Log("[CloudSync] 已断开云端连接")
+        Log("[MinePannel] 已断开云端连接")
     End Sub
 
 #End Region
-
-End Class
-
 
 End Class

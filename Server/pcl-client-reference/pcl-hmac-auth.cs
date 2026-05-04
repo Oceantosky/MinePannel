@@ -7,9 +7,9 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace CloudSync.Client
+namespace MinePannel.Client
 {
-    public static class CloudSyncAuth
+    public static class MinePannelAuth
     {
         /// <summary>
         /// Signs an HTTP request with HMAC-SHA256 using the pre-shared secret key.
@@ -80,7 +80,7 @@ namespace CloudSync.Client
         //
         // // Step 2: Parse ActiveVersion, get manifest
         // string version = ParseJson(instanceJson, "active_version");
-        // var req2 = CloudSyncAuth.CreateSignedRequest(secret, HttpMethod.Get,
+        // var req2 = MinePannelAuth.CreateSignedRequest(secret, HttpMethod.Get,
         //     $"http://192.168.100.101:55000/sync/ebc77384/manifests/manifest_{version}.json");
         // var resp2 = await client.SendAsync(req2);
         //

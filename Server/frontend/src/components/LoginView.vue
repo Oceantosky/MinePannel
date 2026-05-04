@@ -53,7 +53,7 @@
         </div>
       </div>
 
-      <p class="text-center text-xs text-slate-600 mt-6">CloudSync v6 — Secure Multi-User Edition</p>
+      <p class="text-center text-xs text-slate-600 mt-6">MinePannel v6 — Secure Multi-User Edition</p>
     </div>
   </div>
 </template>

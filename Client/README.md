@@ -56,7 +56,7 @@ PCL CE 始终建议使用最新版本的操作系统以获得最佳体验。
 
 ## 🔒 许可证
 
-本客户端项目 (CloudSync Client) 是基于 [PCL CE](https://github.com/PCL-Community/PCL-CE) 的二次开发版本。
+本客户端项目 (MinePannel Client) 是基于 [PCL CE](https://github.com/PCL-Community/PCL-CE) 的二次开发版本。
 
 - `Plain Craft Launcher 2/` 目录中的主界面及核心表现代码，严格遵守原作者的 [自定义许可证 (LICENCE)](Plain%20Craft%20Launcher%202/LICENCE)。
 - `其余所有目录`（包括底层库 `PCL.Core` 以及所有修改新增的同步模块）均使用 [Apache License 2.0](LICENSE)。

@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-	"cloudsync-v6/auth"
-	"cloudsync-v6/types"
+	"minepannel-v6/auth"
+	"minepannel-v6/types"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"

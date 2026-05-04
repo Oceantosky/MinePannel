@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"cloudsync-v6/auth"
-	"cloudsync-v6/store"
-	"cloudsync-v6/types"
+	"minepannel-v6/auth"
+	"minepannel-v6/store"
+	"minepannel-v6/types"
 )
 
 // Middleware holds dependencies needed by HTTP middleware functions.

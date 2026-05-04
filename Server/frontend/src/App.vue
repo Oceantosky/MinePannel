@@ -105,7 +105,7 @@
     >
       <div class="h-20 flex flex-col justify-center px-6 border-b border-slate-800/50 shrink-0">
         <h2 class="text-sm font-black text-slate-200 truncate" :title="instanceMeta?.display_name || currentInstanceId">
-          {{ instanceMeta?.display_name || 'CloudSync 实例' }}
+          {{ instanceMeta?.display_name || 'MinePannel 实例' }}
         </h2>
         <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">{{ currentInstanceId }}</p>
       </div>

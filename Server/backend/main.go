@@ -1,10 +1,10 @@
 package main
 
 import (
-	"cloudsync-v6/auth"
-	"cloudsync-v6/middleware"
-	"cloudsync-v6/store"
-	"cloudsync-v6/types"
+	"minepannel-v6/auth"
+	"minepannel-v6/middleware"
+	"minepannel-v6/store"
+	"minepannel-v6/types"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -296,7 +296,7 @@ func loadConfig() {
 		modified = true
 	}
 	if c.PreAuthSecret == "" {
-		c.PreAuthSecret = "CloudSync_PreAuth_" + generateRandomID()
+		c.PreAuthSecret = "MinePannel_PreAuth_" + generateRandomID()
 		modified = true
 	}
 	if c.ManagePort == 0 {

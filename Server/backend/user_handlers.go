@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"cloudsync-v6/auth"
-	"cloudsync-v6/store"
+	"minepannel-v6/auth"
+	"minepannel-v6/store"
 	"strings"
 	"time"
 )

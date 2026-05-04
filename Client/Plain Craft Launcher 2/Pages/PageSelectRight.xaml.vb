@@ -332,19 +332,19 @@ Public Class PageSelectRight
         ToolTipService.SetHorizontalOffset(BtnDel, 2)
         AddHandler BtnDel.Click, Sub() DeleteVersion(sender, Version)
         ' 云同步按钮
-        Dim isCloudSynced As Boolean = File.Exists(System.IO.Path.Combine(Version.PathInstance, "PCL", "cloud_info.json"))
-        Dim BtnCloudSync As New MyIconButton With {.LogoScale = 1.1, .Logo = Logo.IconButtonServer}
-        If isCloudSynced Then
-            BtnCloudSync.ToolTip = "已与云端同步"
+        Dim isMinePanneled As Boolean = File.Exists(System.IO.Path.Combine(Version.PathInstance, "PCL", "cloud_info.json"))
+        Dim BtnMinePannel As New MyIconButton With {.LogoScale = 1.1, .Logo = Logo.IconButtonServer}
+        If isMinePanneled Then
+            BtnMinePannel.ToolTip = "已与云端同步"
         Else
-            BtnCloudSync.ToolTip = "加入云同步"
+            BtnMinePannel.ToolTip = "加入云同步"
         End If
-        ToolTipService.SetPlacement(BtnCloudSync, Primitives.PlacementMode.Center)
-        ToolTipService.SetVerticalOffset(BtnCloudSync, 30)
-        ToolTipService.SetHorizontalOffset(BtnCloudSync, 2)
-        AddHandler BtnCloudSync.Click,
+        ToolTipService.SetPlacement(BtnMinePannel, Primitives.PlacementMode.Center)
+        ToolTipService.SetVerticalOffset(BtnMinePannel, 30)
+        ToolTipService.SetHorizontalOffset(BtnMinePannel, 2)
+        AddHandler BtnMinePannel.Click,
             Sub()
-                If isCloudSynced Then
+                If isMinePanneled Then
                     Hint("此实例已与云端同步", HintType.Info)
                 Else
                     MarkSingleInstanceToCloud(Version)
@@ -366,7 +366,7 @@ Public Class PageSelectRight
                 PageInstanceLeft.Instance = Version
                 FrmMain.PageChange(FormMain.PageType.InstanceSetup, 0)
             End Sub
-            sender.Buttons = {BtnStar, BtnOpenFolder, BtnDel, BtnCont, BtnCloudSync}
+            sender.Buttons = {BtnStar, BtnOpenFolder, BtnDel, BtnCont, BtnMinePannel}
         Else
             Dim BtnCont As New MyIconButton With {.LogoScale = 1.15, .Logo = Logo.IconButtonOpen}
             BtnCont.ToolTip = "打开文件夹"
@@ -375,7 +375,7 @@ Public Class PageSelectRight
             ToolTipService.SetHorizontalOffset(BtnCont, 2)
             AddHandler BtnCont.Click, Sub() PageInstanceOverall.OpenVersionFolder(Version)
             AddHandler sender.MouseRightButtonUp, Sub() PageInstanceOverall.OpenVersionFolder(Version)
-            sender.Buttons = {BtnStar, BtnOpenFolder, BtnDel, BtnCont, BtnCloudSync}
+            sender.Buttons = {BtnStar, BtnOpenFolder, BtnDel, BtnCont, BtnMinePannel}
         End If
     End Sub
 

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"cloudsync-v6/auth"
+	"minepannel-v6/auth"
 	"strconv"
 	"strings"
 )

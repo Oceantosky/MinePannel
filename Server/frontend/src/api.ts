@@ -1,4 +1,4 @@
-// CloudSync API Client — JWT stored in httpOnly cookie, sent automatically
+// MinePannel API Client — JWT stored in httpOnly cookie, sent automatically
 
 // --- User Cache (non-sensitive — used for UI state only) ---
 

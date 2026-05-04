@@ -9,7 +9,7 @@ Imports Newtonsoft.Json.Linq
 ''' 云端同步引擎。
 ''' 负责全量包下载、增量清单对比、原子替换，以及白名单目录保护。
 ''' </summary>
-Friend Module ModCloudSync
+Friend Module ModMinePannel
 
 #Region "常量"
 
@@ -30,7 +30,7 @@ Friend Module ModCloudSync
     Private Const MaxConcurrentSyncDownloads As Integer = 8
 
     ''' <summary>临时同步目录后缀</summary>
-    Private Const TempSyncSuffix As String = "_cloudsync_tmp"
+    Private Const TempSyncSuffix As String = "_minepannel_tmp"
 
 #End Region
 
@@ -98,10 +98,10 @@ Friend Module ModCloudSync
     Public Function DownloadCloudPackZip(packUrl As String) As String
         If String.IsNullOrEmpty(packUrl) Then Return ""
 
-        packUrl = NegotiateCloudSyncUrl(packUrl)
+        packUrl = NegotiateMinePannelUrl(packUrl)
         If String.IsNullOrEmpty(packUrl) Then Return ""
 
-        Log("[CloudSync] 开始下载云端整合包，来源：" & packUrl)
+        Log("[MinePannel] 开始下载云端整合包，来源：" & packUrl)
 
         Dim tempZip As String = PathTemp & "cloud_pack_" & GetUuid() & ".zip"
 
@@ -111,14 +111,14 @@ Friend Module ModCloudSync
             ModNet.NetDownloadByLoader(packUrl, tempZip)
 
             If Not File.Exists(tempZip) Then
-                Log("[CloudSync] 云端整合包下载失败")
+                Log("[MinePannel] 云端整合包下载失败")
                 Return ""
             End If
 
-            Log("[CloudSync] 云端整合包下载完成：" & tempZip)
+            Log("[MinePannel] 云端整合包下载完成：" & tempZip)
             Return tempZip
         Catch ex As Exception
-            Log(ex, "[CloudSync] 云端整合包下载发生异常", LogLevel.Feedback)
+            Log(ex, "[MinePannel] 云端整合包下载发生异常", LogLevel.Feedback)
             Try
                 If File.Exists(tempZip) Then File.Delete(tempZip)
             Catch : End Try
@@ -135,15 +135,15 @@ Friend Module ModCloudSync
     Public Function DownloadAndSyncFullPack(packUrl As String, instanceDir As String) As Boolean
         If String.IsNullOrEmpty(packUrl) OrElse String.IsNullOrEmpty(instanceDir) Then Return False
         
-        packUrl = NegotiateCloudSyncUrl(packUrl)
+        packUrl = NegotiateMinePannelUrl(packUrl)
         If String.IsNullOrEmpty(packUrl) Then Return False
         
         If Not Directory.Exists(instanceDir) Then
-            Log("[CloudSync] 目标实例目录不存在：" & instanceDir)
+            Log("[MinePannel] 目标实例目录不存在：" & instanceDir)
             Return False
         End If
 
-        Log("[CloudSync] 开始全量同步，来源：" & packUrl)
+        Log("[MinePannel] 开始全量同步，来源：" & packUrl)
 
         Dim tempZip As String = PathTemp & "cloud_fullpack_" & GetUuid() & ".zip"
         Dim tempExtract As String = instanceDir & TempSyncSuffix
@@ -154,7 +154,7 @@ Friend Module ModCloudSync
             If File.Exists(tempZip) Then File.Delete(tempZip)
             ModNet.NetDownloadByLoader(packUrl, tempZip)
             If Not File.Exists(tempZip) Then
-                Log("[CloudSync] 全量包下载失败")
+                Log("[MinePannel] 全量包下载失败")
                 Return False
             End If
 
@@ -180,7 +180,7 @@ Friend Module ModCloudSync
             Dim pclInfo As PclIniInfo = Nothing
             If File.Exists(pclIniPath) Then
                 pclInfo = ParsePclIni(ReadFile(pclIniPath))
-                Log($"[CloudSync] 云端版本：{pclInfo.Name}（{pclInfo.Version}）")
+                Log($"[MinePannel] 云端版本：{pclInfo.Name}（{pclInfo.Version}）")
                 File.Delete(pclIniPath)
             End If
 
@@ -198,11 +198,11 @@ Friend Module ModCloudSync
             ' 6. 清理临时目录
             If Directory.Exists(tempExtract) Then Directory.Delete(tempExtract, True)
 
-            Log("[CloudSync] 全量同步完成")
+            Log("[MinePannel] 全量同步完成")
             Return success
 
         Catch ex As Exception
-            Log(ex, "[CloudSync] 全量同步失败", LogLevel.Feedback)
+            Log(ex, "[MinePannel] 全量同步失败", LogLevel.Feedback)
             ' 清理残留
             Try
                 If File.Exists(tempZip) Then File.Delete(tempZip)
@@ -225,10 +225,10 @@ Friend Module ModCloudSync
     Public Function IncrementalSync(manifestUrl As String, instanceDir As String) As Boolean
         If String.IsNullOrEmpty(manifestUrl) OrElse String.IsNullOrEmpty(instanceDir) Then Return False
 
-        manifestUrl = NegotiateCloudSyncUrl(manifestUrl)
+        manifestUrl = NegotiateMinePannelUrl(manifestUrl)
         If String.IsNullOrEmpty(manifestUrl) Then Return False
 
-        Log("[CloudSync] 开始增量同步...")
+        Log("[MinePannel] 开始增量同步...")
 
         Dim tempDir As String = instanceDir & TempSyncSuffix
 
@@ -236,11 +236,11 @@ Friend Module ModCloudSync
             ' 1. 获取 Manifest
             Dim manifest As Manifest = FetchManifest(manifestUrl)
             If manifest Is Nothing OrElse manifest.Files Is Nothing OrElse manifest.Files.Count = 0 Then
-                Log("[CloudSync] Manifest 为空，跳过增量同步")
+                Log("[MinePannel] Manifest 为空，跳过增量同步")
                 Return False
             End If
 
-            Log($"[CloudSync] Manifest 版本：{manifest.VersionID}，共 {manifest.Files.Count} 个文件")
+            Log($"[MinePannel] Manifest 版本：{manifest.VersionID}，共 {manifest.Files.Count} 个文件")
 
             ' 2. 创建临时目录
             If Directory.Exists(tempDir) Then Directory.Delete(tempDir, True)
@@ -279,11 +279,11 @@ Friend Module ModCloudSync
                         ModNet.NetDownloadByLoader(fileUrl, tempPath)
                         Interlocked.Increment(changedCount)
                     Catch ex As Exception
-                        Log("[CloudSync] 下载文件失败：" & relPath & "：" & ex.Message)
+                        Log("[MinePannel] 下载文件失败：" & relPath & "：" & ex.Message)
                     End Try
                 End Sub)
 
-            Log($"[CloudSync] 共 {changedCount} 个文件需要更新")
+            Log($"[MinePannel] 共 {changedCount} 个文件需要更新")
 
             ' 4. 清理本地冗余文件（在受控目录中，但不在 Manifest 中的文件）
             For Each syncDir In SyncDirs
@@ -299,7 +299,7 @@ Friend Module ModCloudSync
                     If Not manifest.Files.ContainsKey(relPath) Then
                         Try
                             File.Delete(localFile)
-                            Log($"[CloudSync] 删除云端已移除的冗余文件：{relPath}")
+                            Log($"[MinePannel] 删除云端已移除的冗余文件：{relPath}")
                         Catch ex As Exception
                         End Try
                     End If
@@ -328,7 +328,7 @@ Friend Module ModCloudSync
             Return True
 
         Catch ex As Exception
-            Log(ex, "[CloudSync] 增量同步失败", LogLevel.Feedback)
+            Log(ex, "[MinePannel] 增量同步失败", LogLevel.Feedback)
             Try
                 If Directory.Exists(tempDir) Then Directory.Delete(tempDir, True)
             Catch : End Try
@@ -351,13 +351,13 @@ Friend Module ModCloudSync
             ' 元数据不含 files 字段但包含 active_version，检测到此情况则回退到正确的 Manifest API
             If json("files") Is Nothing AndAlso json("active_version") IsNot Nothing Then
                 If depth > 0 Then Throw New Exception("Manifest URL recursion limit exceeded")
-                Log("[CloudSync] 检测到元数据端点，尝试回退到 Manifest API...")
+                Log("[MinePannel] 检测到元数据端点，尝试回退到 Manifest API...")
                 Dim uri As New Uri(manifestUrl)
                 Dim pathParts As String() = uri.AbsolutePath.Trim("/"c).Split("/"c)
                 If pathParts.Length >= 2 AndAlso pathParts(0) = "sync" Then
                     Dim instanceId As String = pathParts(1)
                     Dim correctedUrl As String = $"{uri.Scheme}://{uri.Host}:{uri.Port}/api/v1/sync/info?id={instanceId}"
-                    Log("[CloudSync] 回退 URL：" & correctedUrl)
+                    Log("[MinePannel] 回退 URL：" & correctedUrl)
                     Return FetchManifest(correctedUrl, depth + 1)
                 End If
             End If
@@ -381,7 +381,7 @@ Friend Module ModCloudSync
 
             Return manifest
         Catch ex As Exception
-            Log("[CloudSync] 获取 Manifest 失败：" & ex.Message)
+            Log("[MinePannel] 获取 Manifest 失败：" & ex.Message)
             Return Nothing
         End Try
     End Function
@@ -427,7 +427,7 @@ Friend Module ModCloudSync
                         Directory.Delete(dstPath, True)
                     End If
                     Directory.Move(srcPath, dstPath)
-                    Log($"[CloudSync] 已更新目录：{syncDir}")
+                    Log($"[MinePannel] 已更新目录：{syncDir}")
                 End If
             Next
 
@@ -454,7 +454,7 @@ Friend Module ModCloudSync
 
             Return True
         Catch ex As Exception
-            Log(ex, "[CloudSync] 原子替换失败", LogLevel.Feedback)
+            Log(ex, "[MinePannel] 原子替换失败", LogLevel.Feedback)
             Return False
         End Try
     End Function
@@ -503,13 +503,13 @@ Friend Module ModCloudSync
     ''' <summary>
     ''' 协商 HTTP/HTTPS 协议及 CDN 回退，返回最终同步基地址
     ''' </summary>
-    Public Function NegotiateCloudSyncUrl(targetUrl As String) As String
+    Public Function NegotiateMinePannelUrl(targetUrl As String) As String
         If targetUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) OrElse targetUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase) Then Return targetUrl
         
         Dim httpsUrl = $"https://{targetUrl}"
         Dim httpUrl = $"http://{targetUrl}"
         Try
-            Log($"[CloudSync] 尝试 HTTPS 连接：{httpsUrl}")
+            Log($"[MinePannel] 尝试 HTTPS 连接：{httpsUrl}")
             ' 仅发起握手，若返回 HTTP 错误（如 401 授权失败）也算握手成功
             ModNet.NetGetCodeByRequestOnce(httpsUrl, Timeout:=3000)
             Return httpsUrl
@@ -517,7 +517,7 @@ Friend Module ModCloudSync
             ' HTTP 状态码错误说明 HTTPS TLS 握手成功
             Return httpsUrl
         Catch ex As Exception
-            Log($"[CloudSync] HTTPS 握手失败，准备降级 HTTP：{ex.Message}")
+            Log($"[MinePannel] HTTPS 握手失败，准备降级 HTTP：{ex.Message}")
             Dim allowHttp As Boolean = False
             Dim waitHandle As New Threading.ManualResetEvent(False)
             RunInUi(Sub()

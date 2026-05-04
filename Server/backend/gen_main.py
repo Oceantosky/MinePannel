@@ -555,7 +555,7 @@ func loadConfig() {
 		modified = true
 	}
 	if globalConfig.PreAuthSecret == "" {
-		globalConfig.PreAuthSecret = "CloudSync_PreAuth_" + generateRandomID()
+		globalConfig.PreAuthSecret = "MinePannel_PreAuth_" + generateRandomID()
 		modified = true
 	}
 

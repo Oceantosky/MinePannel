@@ -322,7 +322,7 @@ NextInner:
             Try
                 Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={cloudInfo.InstanceId}"
                 McLaunchLog($"正在通过 {manifestUrl} 检查增量更新...")
-                Dim success As Boolean = ModCloudSync.IncrementalSync(manifestUrl, instanceDir)
+                Dim success As Boolean = ModMinePannel.IncrementalSync(manifestUrl, instanceDir)
                 If success Then
                     McLaunchLog("云端状态对齐完成。")
                 Else
@@ -1671,7 +1671,7 @@ LoginFinish:
                         McLaunchLog("[CloudAbroad] 已拦截启动参数，自动应用联机通道：" & Server)
                     End If
                 Catch ex As Exception
-                    McLaunchLog("[CloudSync] 解析 link.json 失败：" & ex.Message)
+                    McLaunchLog("[MinePannel] 解析 link.json 失败：" & ex.Message)
                 End Try
             End If
         End If

@@ -1,4 +1,4 @@
-module cloudsync-v6
+module minepannel-v6
 
 go 1.24.0
 
