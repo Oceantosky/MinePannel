@@ -49,64 +49,81 @@ Friend Module ModCloudDiscovery
         ' 去掉尾部斜杠
         domain = domain.TrimEnd("/"c)
 
-        Log($"[CloudDiscovery] 正在解析 SRV 记录：{SrvServiceName}.{domain}")
+        ' 判断是否需要跳过 SRV 解析
+        Dim skipSrv As Boolean = False
+        
+        ' 检查 IPv6 格式并自动补全括号 (处理纯 IPv6 的情况)
+        If Uri.CheckHostName(domain) = UriHostNameType.IPv6 AndAlso Not domain.StartsWith("[") Then
+            domain = $"[{domain}]"
+            skipSrv = True
+        ElseIf domain.StartsWith("[") AndAlso domain.Contains("]") Then
+            ' 带有括号的 IPv6 (可能带端口)
+            skipSrv = True
+        ElseIf domain.Contains(":") Then
+            ' 带有端口 (IPv4 或普通域名)
+            skipSrv = True
+        ElseIf Uri.CheckHostName(domain) = UriHostNameType.IPv4 Then
+            ' 纯 IPv4
+            skipSrv = True
+        End If
 
-        Try
-            Dim srvName As String = $"{SrvServiceName}.{domain}"
-            Dim dnsTask As Task(Of DnsMessage) = DnsQuery.Instance.QueryAsync(srvName, DnsQueryType.SRV, CancellationToken.None)
-            dnsTask.Wait(10000)
+        If Not skipSrv Then
+            Log($"[CloudDiscovery] 正在解析 SRV 记录：{SrvServiceName}.{domain}")
 
-            If dnsTask.IsCompleted AndAlso dnsTask.Result IsNot Nothing AndAlso dnsTask.Result.Answers.Count > 0 Then
-                Log($"[CloudDiscovery] 获得 {dnsTask.Result.Answers.Count} 条记录")
-                ' 解析 SRV 记录获取第一个可用地址
-                For Each answer In dnsTask.Result.Answers
-                    Log($"[CloudDiscovery] 检查记录: Type={answer.Type}, Resource={If(answer.Resource IsNot Nothing, answer.Resource.GetType().Name, "null")}")
-                    Dim unknownRes As DnsUnknownResource = TryCast(answer.Resource, DnsUnknownResource)
-                    If unknownRes IsNot Nothing Then
-                        Dim srvResource As New DnsSrvResource()
-                        Dim offset As Integer = 0
-                        Try
-                            srvResource.ReadBytes(unknownRes.Raw, offset, unknownRes.Raw.Length)
-                            Log($"[CloudDiscovery] SRV记录解析: Target={srvResource.Target}, Port={srvResource.Port}")
-                            
-                            If srvResource.Port > 0 AndAlso Not String.IsNullOrEmpty(srvResource.Target) AndAlso srvResource.Target <> "." Then
-                                Dim target As String = srvResource.Target.TrimEnd("."c)
-                                Dim controlUrl As String = NegotiateCloudServerUrl($"{target}:{srvResource.Port}")
-                                If Not String.IsNullOrEmpty(controlUrl) Then
-                                    Log($"[CloudDiscovery] SRV 解析成功：{srvResource.Target}:{srvResource.Port} -> {controlUrl}")
-                                    Return controlUrl
+            Try
+                Dim srvName As String = $"{SrvServiceName}.{domain}"
+                Dim dnsTask As Task(Of DnsMessage) = DnsQuery.Instance.QueryAsync(srvName, DnsQueryType.SRV, CancellationToken.None)
+                dnsTask.Wait(10000)
+
+                If dnsTask.IsCompleted AndAlso dnsTask.Result IsNot Nothing AndAlso dnsTask.Result.Answers.Count > 0 Then
+                    Log($"[CloudDiscovery] 获得 {dnsTask.Result.Answers.Count} 条记录")
+                    ' 解析 SRV 记录获取第一个可用地址
+                    For Each answer In dnsTask.Result.Answers
+                        Log($"[CloudDiscovery] 检查记录: Type={answer.Type}, Resource={If(answer.Resource IsNot Nothing, answer.Resource.GetType().Name, "null")}")
+                        Dim unknownRes As DnsUnknownResource = TryCast(answer.Resource, DnsUnknownResource)
+                        If unknownRes IsNot Nothing Then
+                            Dim srvResource As New DnsSrvResource()
+                            Dim offset As Integer = 0
+                            Try
+                                srvResource.ReadBytes(unknownRes.Raw, offset, unknownRes.Raw.Length)
+                                Log($"[CloudDiscovery] SRV记录解析: Target={srvResource.Target}, Port={srvResource.Port}")
+                                
+                                If srvResource.Port > 0 AndAlso Not String.IsNullOrEmpty(srvResource.Target) AndAlso srvResource.Target <> "." Then
+                                    Dim target As String = srvResource.Target.TrimEnd("."c)
+                                    ' 对于 SRV 返回的 target，如果是 IPv6，也需包裹括号
+                                    If Uri.CheckHostName(target) = UriHostNameType.IPv6 AndAlso Not target.StartsWith("[") Then
+                                        target = $"[{target}]"
+                                    End If
+                                    Dim controlUrl As String = NegotiateCloudServerUrl($"{target}:{srvResource.Port}")
+                                    If Not String.IsNullOrEmpty(controlUrl) Then
+                                        Log($"[CloudDiscovery] SRV 解析成功：{srvResource.Target}:{srvResource.Port} -> {controlUrl}")
+                                        Return controlUrl
+                                    End If
                                 End If
-                            End If
-                        Catch ex As Exception
-                            Log($"[CloudDiscovery] 解析 SRV 记录失败: {ex.Message}")
-                        End Try
-                    End If
-                Next
-                Log("[CloudDiscovery] SRV 记录中未找到有效的服务端地址，将尝试直接连接")
-            End If
+                            Catch ex As Exception
+                                Log($"[CloudDiscovery] 解析 SRV 记录失败: {ex.Message}")
+                            End Try
+                        End If
+                    Next
+                    Log("[CloudDiscovery] SRV 记录中未找到有效的服务端地址，将尝试直接连接")
+                End If
+            Catch ex As Exception
+                Log($"[CloudDiscovery] SRV 查询异常：{ex.Message}，将尝试直接连接")
+            End Try
+        Else
+            Log($"[CloudDiscovery] 检测到 IP 地址或显式端口，跳过 SRV 解析：{domain}")
+        End If
 
-            ' SRV 解析失败或未找到有效记录时，回退到直接将输入作为地址处理
-            Log($"[CloudDiscovery] 尝试将输入作为直接地址连接：{domain}")
-            Dim fallbackUrl As String = NegotiateCloudServerUrl(domain)
-            If Not String.IsNullOrEmpty(fallbackUrl) Then
-                Return fallbackUrl
-            End If
+        ' SRV 解析失败、未找到有效记录或被跳过时，回退到直接将输入作为地址处理
+        Log($"[CloudDiscovery] 尝试将输入作为直接地址连接：{domain}")
+        Dim fallbackUrl As String = NegotiateCloudServerUrl(domain)
+        If Not String.IsNullOrEmpty(fallbackUrl) Then
+            Return fallbackUrl
+        End If
 
-            errorMessage = "无法解析或连接服务器地址，请检查地址是否正确"
-            Log("[CloudDiscovery] " & errorMessage)
-            Return ""
-
-        Catch ex As Exception
-            Log($"[CloudDiscovery] SRV 查询异常：{ex.Message}，将尝试直接连接")
-            Dim fallbackUrl As String = NegotiateCloudServerUrl(domain)
-            If Not String.IsNullOrEmpty(fallbackUrl) Then
-                Return fallbackUrl
-            End If
-
-            errorMessage = "连接服务器失败：" & ex.Message
-            Log("[CloudDiscovery] " & errorMessage)
-            Return ""
-        End Try
+        errorMessage = "无法解析或连接服务器地址，请检查地址是否正确"
+        Log("[CloudDiscovery] " & errorMessage)
+        Return ""
     End Function
 
     ''' <summary>
