@@ -349,15 +349,21 @@ Refresh:
         For Each gameName In localSynced
             Dim instanceDir = System.IO.Path.Combine(McFolderSelected, "versions", gameName)
             Dim displayName As String = gameName
-            Dim pclIniPath = System.IO.Path.Combine(instanceDir, ModMinePannel.PclIniName)
-            If IO.File.Exists(pclIniPath) Then
-                Try
-                    Dim info = ModMinePannel.ParsePclIni(ReadFile(pclIniPath))
-                    If Not String.IsNullOrEmpty(info.Name) Then
-                        displayName = info.Name
-                    End If
-                Catch
-                End Try
+            Dim cloudInfoLoad = ModCloudInfo.LoadLocalInfo(instanceDir)
+            If cloudInfoLoad IsNot Nothing AndAlso Not String.IsNullOrEmpty(cloudInfoLoad.CloudName) Then
+                displayName = cloudInfoLoad.CloudName
+            Else
+                Dim pclIniPath = System.IO.Path.Combine(instanceDir, ModMinePannel.PclIniName)
+                If IO.File.Exists(pclIniPath) Then
+                    Try
+                        Dim info = ModMinePannel.ParsePclIni(ReadFile(pclIniPath))
+                        If Not String.IsNullOrEmpty(info.Name) Then
+                            Dim cleanName = System.Text.RegularExpressions.Regex.Replace(info.Name, "\s*\([^)]*\)$", "").Trim()
+                            If Not String.IsNullOrEmpty(cleanName) Then displayName = cleanName
+                        End If
+                    Catch
+                    End Try
+                End If
             End If
             
             Dim card = CreateDashedCard(displayName, "已同步")
@@ -749,7 +755,9 @@ Refresh:
                         If instances IsNot Nothing Then
                             Dim matchedInstance = instances.FirstOrDefault(Function(i) i.Id = cloudInfo.InstanceId)
                             If matchedInstance IsNot Nothing Then
-                                If ModMinePannel.UpdatePclIniName(instanceDir, matchedInstance.Name) Then
+                                If String.IsNullOrEmpty(cloudInfo.CloudName) OrElse cloudInfo.CloudName <> matchedInstance.Name Then
+                                    cloudInfo.CloudName = matchedInstance.Name
+                                    ModCloudInfo.SaveLocalInfo(instanceDir, cloudInfo)
                                     nameUpdated = True
                                 End If
                             End If

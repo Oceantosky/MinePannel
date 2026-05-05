@@ -264,18 +264,14 @@ Public Module ModMinecraft
         Private _Name As String = Nothing
 
         ''' <summary>
-        ''' 该实例在 UI 上显示的名称，如果配置了 PCL.ini 则优先读取。
+        ''' 该实例在 UI 上显示的名称，如果绑定了云端则优先读取云端岗位名。
         ''' </summary>
         Public ReadOnly Property DisplayName As String
             Get
                 Try
-                    Dim iniPath = PathInstance & "PCL.ini"
-                    If IO.File.Exists(iniPath) Then
-                        Dim info = ModMinePannel.ParsePclIni(ReadFile(iniPath))
-                        If Not String.IsNullOrEmpty(info.Name) Then
-                            Dim cleanName = System.Text.RegularExpressions.Regex.Replace(info.Name, "\s*\([^)]*\)$", "").Trim()
-                            If Not String.IsNullOrEmpty(cleanName) Then Return cleanName
-                        End If
+                    Dim cloudInfo = ModCloudInfo.LoadLocalInfo(PathInstance)
+                    If cloudInfo IsNot Nothing AndAlso Not String.IsNullOrEmpty(cloudInfo.CloudName) Then
+                        Return cloudInfo.CloudName
                     End If
                 Catch
                 End Try

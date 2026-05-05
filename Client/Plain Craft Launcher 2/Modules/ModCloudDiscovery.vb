@@ -392,9 +392,8 @@ Friend Module ModCloudDiscovery
             ' 1. 写入 PCL.ini
             Dim serverUrl = ModCloudAuth.CloudServerUrl
             Dim pclIniPath = System.IO.Path.Combine(pclDir, "PCL.ini")
-            Dim pclIniContent = $"Version:CloudAbroad{Environment.NewLine}" &
-                               $"Name:{cloudInfo.InstanceId}{Environment.NewLine}" &
-                               $"Info:由 CloudAbroad 驱动的高速同步客户端{Environment.NewLine}" &
+            Dim pclIniContent = $"Version:MinePannel{Environment.NewLine}" &
+                               $"Info:由 PCL 云端驱动的高速同步客户端{Environment.NewLine}" &
                                $"SyncUrl:{serverUrl}/api/v1/sync/info?id={cloudInfo.InstanceId}{Environment.NewLine}" &
                                $"SyncPolicy:Enforce{Environment.NewLine}"
             File.WriteAllText(pclIniPath, pclIniContent, System.Text.Encoding.UTF8)
@@ -404,6 +403,7 @@ Friend Module ModCloudDiscovery
             Dim localInfo = ModCloudInfo.GenerateLocalInfo(instanceDir)
             If localInfo IsNot Nothing Then
                 localInfo.InstanceId = cloudInfo.InstanceId
+                localInfo.CloudName = cloudInfo.CloudName
                 localInfo.VersionId = cloudInfo.VersionId
                 localInfo.McVersion = cloudInfo.McVersion
                 localInfo.Modloader = cloudInfo.Modloader

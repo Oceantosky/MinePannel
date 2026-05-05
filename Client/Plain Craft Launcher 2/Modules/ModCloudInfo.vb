@@ -28,6 +28,8 @@ Friend Module ModCloudInfo
     Public Class CloudInfo
         <JsonProperty("instance_id")>
         Public Property InstanceId As String
+        <JsonProperty("cloud_name")>
+        Public Property CloudName As String
         <JsonProperty("version_id")>
         Public Property VersionId As String
         <JsonProperty("mc_version")>

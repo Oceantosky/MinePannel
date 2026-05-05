@@ -534,33 +534,4 @@ Friend Module ModMinePannel
         End Try
     End Function
 
-    ''' <summary>
-    ''' 更新 PCL.ini 中的 Name 字段。
-    ''' </summary>
-    Public Function UpdatePclIniName(instanceDir As String, newName As String) As Boolean
-        If String.IsNullOrEmpty(newName) Then Return False
-        Dim pclIniPath = System.IO.Path.Combine(instanceDir, PclIniName)
-        If Not File.Exists(pclIniPath) Then Return False
-
-        Try
-            Dim content As String = ReadFile(pclIniPath)
-            Dim info As PclIniInfo = ParsePclIni(content)
-            If info.Name IsNot Nothing AndAlso info.Name <> newName AndAlso Not info.Name.StartsWith(newName & " (") Then
-                ' 如果名字不同，则使用正则替换 Name: 所在行的内容
-                Dim regex As New Text.RegularExpressions.Regex("(?i)^name:.*$", Text.RegularExpressions.RegexOptions.Multiline)
-                If regex.IsMatch(content) Then
-                    content = regex.Replace(content, $"Name:{newName}")
-                Else
-                    content &= $"{vbCrLf}Name:{newName}"
-                End If
-                WriteFile(pclIniPath, content)
-                Log($"[MinePannel] 已将实例 {instanceDir} 的名称同步更新为 {newName}")
-                Return True
-            End If
-        Catch ex As Exception
-            Log($"[MinePannel] 更新 PCL.ini 名称失败：{ex.Message}")
-        End Try
-        Return False
-    End Function
-
 End Module
