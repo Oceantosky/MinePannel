@@ -260,7 +260,7 @@ Public Class PageSelectRight
         End Try
     End Sub
     Public Shared Function McVersionListItem(instance As McInstance) As MyListItem
-        Dim NewItem As New MyListItem With {.Title = instance.Name, .Info = instance.Desc, .Height = 42, .Tag = instance, .SnapsToDevicePixels = True, .Type = MyListItem.CheckType.Clickable}
+        Dim NewItem As New MyListItem With {.Title = instance.DisplayName, .Info = instance.Desc, .Height = 42, .Tag = instance, .SnapsToDevicePixels = True, .Type = MyListItem.CheckType.Clickable}
         Dim instanceInfo = instance.Info
         Dim tags As New List(Of String)
         tags.Add(instanceInfo.VanillaName)

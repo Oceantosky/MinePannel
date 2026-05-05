@@ -512,7 +512,7 @@ Finish:
                 Else
                     BtnLaunch.IsEnabled = False
                 End If
-                FrmLaunchLeft.LabVersion.Text = McInstanceSelected.Name
+                FrmLaunchLeft.LabVersion.Text = McInstanceSelected.DisplayName
                 'FrmLaunchLeft.BtnMore.Visibility = Visibility.Visible '由功能隐藏设置修改
         End Select
 ExitRefresh:

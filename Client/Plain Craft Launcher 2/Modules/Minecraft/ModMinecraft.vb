@@ -264,6 +264,26 @@ Public Module ModMinecraft
         Private _Name As String = Nothing
 
         ''' <summary>
+        ''' 该实例在 UI 上显示的名称，如果配置了 PCL.ini 则优先读取。
+        ''' </summary>
+        Public ReadOnly Property DisplayName As String
+            Get
+                Try
+                    Dim iniPath = PathInstance & "PCL.ini"
+                    If IO.File.Exists(iniPath) Then
+                        Dim info = ModMinePannel.ParsePclIni(ReadFile(iniPath))
+                        If Not String.IsNullOrEmpty(info.Name) Then
+                            Dim cleanName = System.Text.RegularExpressions.Regex.Replace(info.Name, "\s*\([^)]*\)$", "").Trim()
+                            If Not String.IsNullOrEmpty(cleanName) Then Return cleanName
+                        End If
+                    End If
+                Catch
+                End Try
+                Return Name
+            End Get
+        End Property
+
+        ''' <summary>
         ''' 显示的描述文本。
         ''' </summary>
         Public Desc As String = "该实例未被加载，请向作者反馈此问题"
