@@ -82,18 +82,28 @@ Friend Module ModCloudDiscovery
                         End Try
                     End If
                 Next
-
-                errorMessage = "SRV 记录中未找到有效的服务端地址"
-                Log("[CloudDiscovery] " & errorMessage)
-                Return ""
+                Log("[CloudDiscovery] SRV 记录中未找到有效的服务端地址，将尝试直接连接")
             End If
 
-            errorMessage = "无法解析服务器地址，请检查域名是否正确"
+            ' SRV 解析失败或未找到有效记录时，回退到直接将输入作为地址处理
+            Log($"[CloudDiscovery] 尝试将输入作为直接地址连接：{domain}")
+            Dim fallbackUrl As String = NegotiateCloudServerUrl(domain)
+            If Not String.IsNullOrEmpty(fallbackUrl) Then
+                Return fallbackUrl
+            End If
+
+            errorMessage = "无法解析或连接服务器地址，请检查地址是否正确"
             Log("[CloudDiscovery] " & errorMessage)
             Return ""
 
         Catch ex As Exception
-            errorMessage = "DNS 解析失败：" & ex.Message
+            Log($"[CloudDiscovery] SRV 查询异常：{ex.Message}，将尝试直接连接")
+            Dim fallbackUrl As String = NegotiateCloudServerUrl(domain)
+            If Not String.IsNullOrEmpty(fallbackUrl) Then
+                Return fallbackUrl
+            End If
+
+            errorMessage = "连接服务器失败：" & ex.Message
             Log("[CloudDiscovery] " & errorMessage)
             Return ""
         End Try
