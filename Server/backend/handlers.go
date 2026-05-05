@@ -91,7 +91,11 @@ func listInstancesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		/// Scheme-less URL — PCL client prepends https:// or http:// as negotiated
-		u := fmt.Sprintf("%s:%d/sync/%s/releases/%s", s.Config().PublicIP, s.Config().BusinessPort, id, f)
+		publicAddr := s.Config().PublicIP
+		if !strings.Contains(publicAddr, ":") {
+			publicAddr = fmt.Sprintf("%s:%d", publicAddr, s.Config().BusinessPort)
+		}
+		u := fmt.Sprintf("%s/sync/%s/releases/%s", publicAddr, id, f)
 		if s.Config().DistPolicy == "cdn" && meta.CDNLink != "" {
 			u = meta.CDNLink
 		}
@@ -625,8 +629,13 @@ func zipSource(id, src, dst string, meta types.InstanceMetadata) error {
 	}
 
 	clientSecret := fmt.Sprintf("%x", sha256.Sum256([]byte(s.Config().SecretKey+"_CLIENT")))[:16]
-	pclIniContent := fmt.Sprintf("Version:CloudAbroad\nSecret:%s\nName:%s (%s)\nInfo:由 CloudAbroad 驱动的高速同步客户端\nSyncUrl:%s:%d/api/v1/sync/info?id=%s\nSyncPolicy:Enforce\n",
-		clientSecret, meta.DisplayName, meta.ActiveVersion, s.Config().PublicIP, s.Config().BusinessPort, id)
+	publicAddr := s.Config().PublicIP
+	if !strings.Contains(publicAddr, ":") {
+		publicAddr = fmt.Sprintf("%s:%d", publicAddr, s.Config().BusinessPort)
+	}
+
+	pclIniContent := fmt.Sprintf("Version:MinePannel\nSecret:%s\nName:%s (%s)\nInfo:由 PCL 云端驱动的高速同步客户端\nSyncUrl:http://%s/api/v1/sync/info?id=%s\nSyncPolicy:Enforce\n",
+		clientSecret, meta.DisplayName, meta.ActiveVersion, publicAddr, id)
 
 	broadcastLog(id, "DEBUG: Injecting PCL.ini...")
 	if err := addFile("PCL.ini", pclIniContent); err != nil {

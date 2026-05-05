@@ -334,7 +334,11 @@ func (mw *Middleware) WithCORS(next http.HandlerFunc) http.HandlerFunc {
 			if err == nil {
 				host := u.Hostname()
 				cfg := mw.Config()
-				allowed := host == cfg.PublicIP || host == "localhost" || host == "127.0.0.1"
+				publicHost := cfg.PublicIP
+				if strings.Contains(publicHost, ":") {
+					publicHost = strings.Split(publicHost, ":")[0]
+				}
+				allowed := host == publicHost || host == "localhost" || host == "127.0.0.1"
 				for _, node := range cfg.Nodes {
 					if host == node.IP {
 						allowed = true

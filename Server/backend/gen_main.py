@@ -1427,8 +1427,12 @@ func zipSource(id, src, dst string, meta InstanceMetadata) error {
 	a := zip.NewWriter(z)
 	defer a.Close()
 
-	pclIniContent := fmt.Sprintf("Version:CloudAbroad\nSecret:%s\nName:%s (%s)\nInfo:由 CloudAbroad 驱动的高速同步客户端\nSyncUrl:http://%s:55000/sync/%s/instance.json\nSyncPolicy:Enforce\n",
-		globalConfig.SecretKey, meta.DisplayName, meta.ActiveVersion, globalConfig.PublicIP, id)
+	publicAddr := globalConfig.PublicIP
+	if !strings.Contains(publicAddr, ":") {
+		publicAddr = fmt.Sprintf("%s:%d", publicAddr, globalConfig.BusinessPort)
+	}
+	pclIniContent := fmt.Sprintf("Version:MinePannel\nSecret:%s\nName:%s (%s)\nInfo:由 PCL 云端驱动的高速同步客户端\nSyncUrl:http://%s/sync/%s/instance.json\nSyncPolicy:Enforce\n",
+		globalConfig.SecretKey, meta.DisplayName, meta.ActiveVersion, publicAddr, id)
 
 	broadcastLog(id, "DEBUG: Injecting PCL.ini...")
 	hPcl := &zip.FileHeader{Name: "PCL.ini", Method: zip.Deflate, Modified: time.Now()}

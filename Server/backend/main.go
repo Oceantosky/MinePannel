@@ -440,7 +440,7 @@ func main() {
 		Addr:         fmt.Sprintf(":%d", srv.Config().BusinessPort),
 		Handler:      dataMux,
 		ReadTimeout:  15 * time.Minute,
-		WriteTimeout: 15 * time.Minute,
+		WriteTimeout: 0, // Disabled to allow slow downloads of large files without disconnecting
 		IdleTimeout:  120 * time.Second,
 	}
 
