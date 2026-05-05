@@ -347,19 +347,32 @@ Refresh:
         ' 获取本地已同步的游戏
         Dim localSynced = GetSyncedLocalInstances()
         For Each gameName In localSynced
-            Dim card = CreateDashedCard(gameName, "已同步")
+            Dim instanceDir = System.IO.Path.Combine(McFolderSelected, "versions", gameName)
+            Dim displayName As String = gameName
+            Dim pclIniPath = System.IO.Path.Combine(instanceDir, ModMinePannel.PclIniName)
+            If IO.File.Exists(pclIniPath) Then
+                Try
+                    Dim info = ModMinePannel.ParsePclIni(ReadFile(pclIniPath))
+                    If Not String.IsNullOrEmpty(info.Name) Then
+                        displayName = info.Name
+                    End If
+                Catch
+                End Try
+            End If
+            
+            Dim card = CreateDashedCard(displayName, "已同步")
             Dim capturedGameName = gameName
+            Dim capturedInstanceDir = instanceDir
             AddHandler card.MouseLeftButtonDown,
                 Sub()
-                    Dim instanceDir = System.IO.Path.Combine(McFolderSelected, "versions", capturedGameName)
-                    Dim cloudInfo = ModCloudInfo.LoadLocalInfo(instanceDir)
+                    Dim cloudInfo = ModCloudInfo.LoadLocalInfo(capturedInstanceDir)
                     If cloudInfo IsNot Nothing Then
                         Hint("开始检查增量更新...", HintType.Info)
                         RunInNewThread(
                         Sub()
                             Try
                                 Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={cloudInfo.InstanceId}"
-                                Dim success = ModMinePannel.IncrementalSync(manifestUrl, instanceDir)
+                                Dim success = ModMinePannel.IncrementalSync(manifestUrl, capturedInstanceDir)
                                 RunInUi(
                                 Sub()
                                     If success Then
@@ -727,6 +740,7 @@ Refresh:
             ' 2. 检查本地所有已同步的实例的增量更新
             Dim localSynced = GetSyncedLocalInstances()
             Dim updatedCount = 0
+            Dim nameUpdated As Boolean = False
             For Each gameName In localSynced
                 Dim instanceDir = System.IO.Path.Combine(McFolderSelected, "versions", gameName)
                 Dim cloudInfo = ModCloudInfo.LoadLocalInfo(instanceDir)
@@ -735,7 +749,9 @@ Refresh:
                         If instances IsNot Nothing Then
                             Dim matchedInstance = instances.FirstOrDefault(Function(i) i.Id = cloudInfo.InstanceId)
                             If matchedInstance IsNot Nothing Then
-                                ModMinePannel.UpdatePclIniName(instanceDir, matchedInstance.Name)
+                                If ModMinePannel.UpdatePclIniName(instanceDir, matchedInstance.Name) Then
+                                    nameUpdated = True
+                                End If
                             End If
                         End If
 
@@ -748,6 +764,11 @@ Refresh:
                     End Try
                 End If
             Next
+
+            If nameUpdated Then
+                McInstanceListForceRefresh = True
+                LoaderFolderRun(McInstanceListLoader, McFolderSelected, LoaderFolderRunType.ForceRun, MaxDepth:=1, ExtraPath:="versions\")
+            End If
 
             ' 3. 更新 UI
             RunInUi(

@@ -24,7 +24,7 @@ Friend Module ModMinePannel
     }
 
     ''' <summary>PCL.ini 文件名</summary>
-    Private Const PclIniName As String = "PCL.ini"
+    Public Const PclIniName As String = "PCL.ini"
 
     ''' <summary>增量同步最大并发下载数</summary>
     Private Const MaxConcurrentSyncDownloads As Integer = 8
@@ -537,10 +537,10 @@ Friend Module ModMinePannel
     ''' <summary>
     ''' 更新 PCL.ini 中的 Name 字段。
     ''' </summary>
-    Public Sub UpdatePclIniName(instanceDir As String, newName As String)
-        If String.IsNullOrEmpty(newName) Then Return
+    Public Function UpdatePclIniName(instanceDir As String, newName As String) As Boolean
+        If String.IsNullOrEmpty(newName) Then Return False
         Dim pclIniPath = System.IO.Path.Combine(instanceDir, PclIniName)
-        If Not File.Exists(pclIniPath) Then Return
+        If Not File.Exists(pclIniPath) Then Return False
 
         Try
             Dim content As String = ReadFile(pclIniPath)
@@ -555,10 +555,12 @@ Friend Module ModMinePannel
                 End If
                 WriteFile(pclIniPath, content)
                 Log($"[MinePannel] 已将实例 {instanceDir} 的名称同步更新为 {newName}")
+                Return True
             End If
         Catch ex As Exception
             Log($"[MinePannel] 更新 PCL.ini 名称失败：{ex.Message}")
         End Try
-    End Sub
+        Return False
+    End Function
 
 End Module
