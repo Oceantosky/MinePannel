@@ -1,0 +1,10 @@
+frontend/node_modules/
+frontend/dist/
+backend/minepannel-server
+backend/cloudabroad-server
+backend/server.exe
+data/
+data.db
+config.json
+instances/
+.git/
