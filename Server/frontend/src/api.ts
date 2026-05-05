@@ -243,18 +243,26 @@ export async function apiUploadFile(id: string, path: string, file: File, onProg
   })
 }
 
-export async function apiUploadPclPack(id: string, file: File, onProgress?: (pct: number) => void): Promise<void> {
+export async function apiUploadPclPack(id: string, file: File, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        xhr.abort()
+        reject(new Error('PCL upload cancelled'))
+      })
+    }
     const formData = new FormData()
     formData.append('file', file)
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) onProgress((e.loaded / e.total) * 100)
     })
+    xhr.upload.addEventListener('error', () => reject(new Error('Network error occurred during PCL upload')))
+    xhr.upload.addEventListener('timeout', () => reject(new Error('PCL upload timed out')))
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) resolve()
-        else reject(new Error(`PCL upload failed: ${xhr.status}`))
+        else if (xhr.status !== 0) reject(new Error(`PCL upload failed: ${xhr.status}`))
       }
     }
     xhr.open('POST', `/api/v1/master/files/upload_pcl_pack?id=${id}`, true)

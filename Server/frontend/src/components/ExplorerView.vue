@@ -33,19 +33,25 @@
               <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><div class="bg-blue-500 h-full rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div></div>
             </div>
           </div>
-          <div class="flex gap-4"><button @click="showPclModal = false" :disabled="isUploading" class="flex-1 px-6 py-3 rounded-xl font-bold text-slate-400 hover:bg-slate-800 transition-colors border border-slate-800">取消</button><button @click="pclInput?.click()" :disabled="isUploading" class="flex-[2] bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20">选择 PCL 压缩包</button><input type="file" ref="pclInput" class="hidden" accept=".zip" @change="handlePclSelect"></div>
+          <div class="flex gap-4">
+            <button v-if="!isUploading" @click="showPclModal = false" class="flex-1 px-6 py-3 rounded-xl font-bold text-slate-400 hover:bg-slate-800 transition-colors border border-slate-800">取消</button>
+            <button v-else @click="cancelUpload" class="flex-1 px-6 py-3 rounded-xl font-bold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors border border-rose-500/30">中止上传</button>
+            <button @click="pclInput?.click()" :disabled="isUploading" class="flex-[2] bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20">选择 PCL 压缩包</button>
+            <input type="file" ref="pclInput" class="hidden" accept=".zip" @change="handlePclSelect">
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Common Upload Overlay -->
     <div v-if="isUploading && !showPclModal" class="absolute inset-0 z-[60] bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
-      <div class="w-full max-w-md p-10 bg-slate-800/50 rounded-3xl border border-white/10 shadow-2xl">
-        <div class="flex items-center justify-between mb-6">
+      <div class="w-full max-w-md p-10 bg-slate-800/50 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center">
+        <div class="w-full flex items-center justify-between mb-6">
           <div class="flex-1 min-w-0"><h3 class="text-xl font-bold text-white">同步资产中...</h3><p class="text-xs text-slate-400 mt-1 truncate pr-4">{{ currentFileName }}</p></div>
           <span class="text-2xl font-black text-indigo-400 font-mono">{{ Math.round(uploadProgress) }}%</span>
         </div>
         <div class="w-full bg-slate-900 rounded-full h-3 mb-6 p-0.5 border border-white/5"><div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 h-full rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(99,102,241,0.4)]" :style="{ width: uploadProgress + '%' }"></div></div>
+        <button @click="cancelUpload" class="mt-4 px-6 py-2 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors border border-rose-500/30">中止上传</button>
       </div>
     </div>
 
@@ -226,7 +232,15 @@ const uploadInput = ref<HTMLInputElement | null>(null);
 const dragCounter = ref(0);
 const isUploading = ref(false);
 const uploadProgress = ref(0);
+const uploadAbortController = ref<AbortController | null>(null);
 const currentFileName = ref('');
+
+function cancelUpload() {
+  if (uploadAbortController.value) {
+    uploadAbortController.value.abort();
+    uploadAbortController.value = null;
+  }
+}
 const searchQuery = ref('');
 const selectedFiles = ref<Set<string>>(new Set());
 const multiSelectMode = ref(false);
