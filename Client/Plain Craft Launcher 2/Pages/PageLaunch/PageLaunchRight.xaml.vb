@@ -732,6 +732,13 @@ Refresh:
                 Dim cloudInfo = ModCloudInfo.LoadLocalInfo(instanceDir)
                 If cloudInfo IsNot Nothing Then
                     Try
+                        If instances IsNot Nothing Then
+                            Dim matchedInstance = instances.FirstOrDefault(Function(i) i.Id = cloudInfo.InstanceId)
+                            If matchedInstance IsNot Nothing Then
+                                ModMinePannel.UpdatePclIniName(instanceDir, matchedInstance.Name)
+                            End If
+                        End If
+
                         Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={cloudInfo.InstanceId}"
                         If ModMinePannel.IncrementalSync(manifestUrl, instanceDir) Then
                             updatedCount += 1
