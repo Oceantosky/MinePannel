@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  minepannel:
+    build: .
+    container_name: minepannel-server
+    restart: unless-stopped
+    ports:
+      - "55000:55000" # 管理端口 & 前端 Web 面板
+      - "55001:55001" # 业务端口 (客户端下载和同步通信)
+    volumes:
+      # 将容器内的 /app/data 映射到宿主机的 ./data 目录
+      # 以实现 config.json, data.db 数据库和 instances 整合包文件的持久化
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
