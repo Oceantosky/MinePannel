@@ -163,7 +163,9 @@ Friend Module ModCloudAuth
     ''' 向 HttpRequestMessage 注入 CloudAbroad 认证头。
     ''' 仅在已绑定时生效。
     ''' </summary>
-    Public Sub SignCloudRequest(ByRef request As HttpRequestMessage)
+    Public Sub SignCloudRequest(url As String, ByRef request As HttpRequestMessage)
+        If String.IsNullOrEmpty(CloudServerUrl) OrElse Not url.StartsWith(CloudServerUrl, StringComparison.OrdinalIgnoreCase) Then Return
+        
         request.Headers.Add("X-Device-ID", DeviceId)
         If IsBound Then
             request.Headers.Add("X-Binding-Token", CloudBindingToken)

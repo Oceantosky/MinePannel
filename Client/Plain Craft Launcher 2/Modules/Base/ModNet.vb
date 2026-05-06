@@ -82,9 +82,12 @@ Public Module ModNet
         If Not response.IsSuccessStatusCode Then
             ' 拦截云端 401 授权错误
             If response.StatusCode = HttpStatusCode.Unauthorized AndAlso response.RequestMessage IsNot Nothing AndAlso response.RequestMessage.Headers.Contains("X-Device-ID") Then
-                Log("[CloudAuth] 检测到请求 401 Unauthorized，授权可能已被撤销，重新唤起认证...")
-                ModCloudAuth.ClearBinding()
-                ModCloudAuth.ShowPreAuthDialog()
+                Dim requestUrl As String = response.RequestMessage.RequestUri?.ToString()
+                If Not String.IsNullOrEmpty(ModCloudAuth.CloudServerUrl) AndAlso requestUrl IsNot Nothing AndAlso requestUrl.StartsWith(ModCloudAuth.CloudServerUrl, StringComparison.OrdinalIgnoreCase) Then
+                    Log("[CloudAuth] 检测到请求 401 Unauthorized，授权可能已被撤销，重新唤起认证...")
+                    ModCloudAuth.ClearBinding()
+                    ModCloudAuth.ShowPreAuthDialog()
+                End If
             End If
 
             Dim content As String = response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
@@ -143,7 +146,7 @@ Public Module ModNet
                 Using request As New HttpRequestMessage(HttpMethod.Get, Url)
                     request.Headers.Accept.ParseAdd(Accept)
                     SecretHeadersSign(Url, request, UseBrowserUserAgent)
-                    ModCloudAuth.SignCloudRequest(request)
+                    ModCloudAuth.SignCloudRequest(Url, request)
                     Using response = NetworkService.GetClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token).GetAwaiter().GetResult()
                         EnsureSuccessStatusCode(response)
                         If Encode Is Nothing Then Encode = Encoding.UTF8
@@ -210,7 +213,7 @@ Public Module ModNet
             If File.Exists(LocalFile) Then File.Delete(LocalFile)
             Using request As New HttpRequestMessage(HttpMethod.Get, Url)
                 SecretHeadersSign(Url, request, UseBrowserUserAgent)
-                ModCloudAuth.SignCloudRequest(request)
+                ModCloudAuth.SignCloudRequest(Url, request)
                 Using response As HttpResponseMessage = Await NetworkService.GetClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                     EnsureSuccessStatusCode(response)
                     Using httpStream As Stream = Await response.Content.ReadAsStreamAsync()
@@ -339,7 +342,7 @@ Public Module ModNet
                 End Select
                 Using request As New HttpRequestMessage(RequestMethod, Url)
                     SecretHeadersSign(Url, request, UseBrowserUserAgent)
-                    ModCloudAuth.SignCloudRequest(request)
+                    ModCloudAuth.SignCloudRequest(Url, request)
                     If {HttpMethod.Post, HttpMethod.Put}.Contains(RequestMethod) Then
                         If Not IsNothing(Data) Then
                             If TypeOf Data Is Byte() Then
@@ -1018,7 +1021,7 @@ StartThread:
                 If SourcesOnce.Contains(th.Source) AndAlso Not th.Equals(th.Source.SingleThread) Then GoTo SourceBreak
                 Dim request As New HttpRequestMessage(HttpMethod.Get, th.Source.Url)
                 SecretHeadersSign(th.Source.Url, request, UseBrowserUserAgent, Me.CustomUserAgent)
-                ModCloudAuth.SignCloudRequest(request)
+                ModCloudAuth.SignCloudRequest(th.Source.Url, request)
                 If Not th.IsFirstThread OrElse th.DownloadStart <> 0 Then request.Headers.Range = New Headers.RangeHeaderValue(th.DownloadStart, Nothing)
                 Using cts As New CancellationTokenSource
                     cts.CancelAfter(Timeout)

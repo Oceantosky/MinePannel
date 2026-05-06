@@ -226,6 +226,7 @@ func (mw *Middleware) WithPreAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		binding, err := mw.Store.GetDeviceBindingByToken(bindingToken)
 		if err != nil || !binding.IsActive {
+			fmt.Printf("DEBUG: Token invalid or not found: %q, Error: %v\n", bindingToken, err)
 			sendError(w, http.StatusUnauthorized, "Invalid or revoked binding token")
 			return
 		}

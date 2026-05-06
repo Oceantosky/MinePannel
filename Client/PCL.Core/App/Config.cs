@@ -618,6 +618,9 @@ public static partial class Config
         [ConfigItem<bool>("VersionAdvanceJava", false)] public partial ArgConfig<bool> IgnoreJavaCompatibility { get; }
         [ConfigItem<bool>("VersionAdvanceDisableJlw", false)] public partial ArgConfig<bool> DisableJlwObsolete { get; }
         [ConfigItem<string>("VersionAdvanceRun", "")] public partial ArgConfig<string> PreLaunchCommand { get; }
+
+        [ConfigItem<string>("MinePannelInstanceId", "")] public partial ArgConfig<string> MinePannelInstanceId { get; }
+        [ConfigItem<string>("MinePannelInstanceName", "")] public partial ArgConfig<string> MinePannelInstanceName { get; }
         [ConfigItem<string>("VersionAdvanceClasspathHead", "")] public partial ArgConfig<string> ClasspathHead { get; }
         [ConfigItem<bool>("VersionAdvanceRunWait", true)] public partial ArgConfig<bool> PreLaunchCommandWait { get; }
         [ConfigItem<bool>("VersionAdvanceDisableJLW", false)] public partial ArgConfig<bool> DisableJlw { get; }
