@@ -494,6 +494,25 @@ Public Class PageSelectRight
 
     ''' <summary>执行单个实例的云同步标记逻辑</summary>
     Private Shared Sub DoMarkSingleInstance(instance As McInstance)
+        Dim serverUrl As String = ModCloudAuth.CloudServerUrl
+        If String.IsNullOrEmpty(serverUrl) Then
+            Dim domain As String = MyMsgBoxInput("连接到云端服务器", "此实例尚未连接到任何云端，请输入你要连接的服务器域名或 IP 地址：", 
+                HintText:="例如: mc.example.com", Button1:="连接", Button2:="取消")
+            If String.IsNullOrEmpty(domain) Then Return
+            domain = domain.Trim()
+            If String.IsNullOrEmpty(domain) Then Return
+            
+            Hint("正在连接...", HintType.Info)
+            Dim errorMsg As String = ""
+            Dim cloudInstances As List(Of ModCloudDiscovery.CloudInstance) = Nothing
+            Dim success As Boolean = ModCloudDiscovery.ConnectAndFetchInstances(domain, cloudInstances, errorMsg)
+            If Not success Then
+                RunInUi(Sub() Hint("连接失败：" & errorMsg, HintType.Critical))
+                Return
+            End If
+            serverUrl = ModCloudAuth.CloudServerUrl
+        End If
+
         RunInNewThread(
         Sub()
             Try
@@ -503,9 +522,9 @@ Public Class PageSelectRight
                     Return
                 End If
 
-                Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(ModCloudAuth.CloudServerUrl)
+                Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(serverUrl)
                 If cloudInfoList Is Nothing OrElse cloudInfoList.Count = 0 Then
-                    RunInUi(Sub() Hint("未找到可用的云端实例", HintType.Info))
+                    RunInUi(Sub() Hint("未在服务器上找到任何可用的云端实例", HintType.Info))
                     Return
                 End If
 
@@ -517,10 +536,11 @@ Public Class PageSelectRight
                     RunInUi(
                     Sub()
                         Try
-                            Dim msg = $"发现匹配的云端实例：{bestMatch.CloudInfo.InstanceId}{vbCrLf}" &
+                            Dim cloudDisplayName = If(Not String.IsNullOrEmpty(bestMatch.CloudInfo.CloudName), bestMatch.CloudInfo.CloudName, bestMatch.CloudInfo.InstanceId)
+                            Dim msg = $"发现高匹配度的云端实例：{cloudDisplayName}{vbCrLf}" &
                                       $"匹配度：{bestMatch.Score:P0}（{bestMatch.MatchedMods} 个 mod 重叠）{vbCrLf}{vbCrLf}" &
-                                      $"是否将此本地实例标记为与云端同步？"
-                            If MyMsgBox(msg, "发现可同步的云端实例", "标记", "取消") = 1 Then
+                                      $"是否将此本地实例与该云端同步？"
+                            If MyMsgBox(msg, "发现可同步的云端实例", "标记并同步", "取消") = 1 Then
                                 Dim cloudInfo = bestMatch.CloudInfo
                                 RunInNewThread(
                                 Sub()
@@ -528,7 +548,9 @@ Public Class PageSelectRight
                                     RunInUi(
                                     Sub()
                                         If success Then
-                                            Hint($"已将「{instance.Name}」标记为云端同步！", HintType.Finish)
+                                            Hint($"已将「{instance.DisplayName}」标记为云端同步！", HintType.Finish)
+                                            McInstanceListForceRefresh = True
+                                            LoaderFolderRun(McInstanceListLoader, McFolderSelected, LoaderFolderRunType.ForceRun, MaxDepth:=1, ExtraPath:="versions\")
                                         Else
                                             Hint("标记失败，请检查日志", HintType.Critical)
                                         End If
@@ -549,8 +571,9 @@ Public Class PageSelectRight
                             ' 从云端实例列表中选择
                             Dim selections As New List(Of IMyRadio)()
                             For Each ci In cloudInfoList
+                                Dim cloudDisplayName = If(Not String.IsNullOrEmpty(ci.CloudName), ci.CloudName, ci.InstanceId)
                                 selections.Add(New MyListItem With {
-                                    .Title = ci.InstanceId,
+                                    .Title = $"{cloudDisplayName} ({ci.McVersion} {ci.Modloader})",
                                     .MinHeight = 36
                                 })
                             Next
@@ -564,7 +587,9 @@ Public Class PageSelectRight
                                     RunInUi(
                                     Sub()
                                         If success Then
-                                            Hint($"已将「{instance.Name}」标记为云端同步！", HintType.Finish)
+                                            Hint($"已将「{instance.DisplayName}」标记为云端同步！", HintType.Finish)
+                                            McInstanceListForceRefresh = True
+                                            LoaderFolderRun(McInstanceListLoader, McFolderSelected, LoaderFolderRunType.ForceRun, MaxDepth:=1, ExtraPath:="versions\")
                                         Else
                                             Hint("标记失败，请检查日志", HintType.Critical)
                                         End If

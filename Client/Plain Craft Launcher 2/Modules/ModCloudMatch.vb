@@ -28,8 +28,7 @@ Friend Module ModCloudMatch
 
         Try
             Dim url = $"{serverUrl}/api/v1/sync/instances"
-            Dim response As String = ModNet.NetGetCodeByRequestOnce(url, IsJson:=True, Timeout:=15000)
-            Dim json As JObject = JObject.Parse(response)
+            Dim json As JObject = ModNet.NetGetCodeByRequestOnce(url, IsJson:=True, Timeout:=15000)
 
             Dim items As JToken = Nothing
             If json("success") IsNot Nothing AndAlso json("success").Value(Of Boolean)() Then
@@ -56,6 +55,7 @@ Friend Module ModCloudMatch
                     End If
                     result.Add(New ModCloudInfo.CloudInfo With {
                         .InstanceId = If(instance("id") IsNot Nothing, instance("id").Value(Of String)(), ""),
+                        .CloudName = If(instance("display_name") IsNot Nothing, instance("display_name").Value(Of String)(), ""),
                         .VersionId = If(instance("version_id") IsNot Nothing, instance("version_id").Value(Of String)(), ""),
                         .McVersion = If(instance("mc_version") IsNot Nothing, instance("mc_version").Value(Of String)(), ""),
                         .Modloader = If(instance("modloader") IsNot Nothing, instance("modloader").Value(Of String)(), ""),
