@@ -309,19 +309,25 @@ Refresh:
 
     Private _CurrentCloudInstances As List(Of ModCloudDiscovery.CloudInstance)
 
+    Private IsCloudInit As Boolean = False
     Private Sub CloudInit()
         PanCloud.Visibility = Visibility.Visible
+        If Not IsCloudInit Then
+            IsCloudInit = True
+            AddHandler McInstanceListLoader.LoadingStateChanged, AddressOf McInstanceListLoader_StateChanged
+        End If
         If Not String.IsNullOrEmpty(ModCloudAuth.CloudServerUrl) Then
             ShowCloudConnected()
-            ' 后台自动拉取实例列表以备使用
-            RunInNewThread(
-            Sub()
-                Dim errorMsg As String = ""
-                Dim instances = ModCloudDiscovery.FetchInstances(ModCloudAuth.CloudServerUrl, errorMsg)
-                _CurrentCloudInstances = instances
-            End Sub, "Fetch Cloud Instances")
+            ' 后台自动拉取实例列表并执行静默增量同步
+            RunCloudSync(showHint:=False)
         Else
             ShowCloudDisconnected()
+        End If
+    End Sub
+
+    Private Sub McInstanceListLoader_StateChanged()
+        If McInstanceListLoader.State = LoadState.Finished Then
+            RunInUi(AddressOf RefreshCloudCards)
         End If
     End Sub
 
@@ -414,6 +420,7 @@ Refresh:
 
     Private Function GetSyncedLocalInstances() As List(Of String)
         Dim list As New List(Of String)
+        If String.IsNullOrEmpty(McFolderSelected) Then Return list
         Try
             Dim versionsDir = System.IO.Path.Combine(McFolderSelected, "versions")
             If System.IO.Directory.Exists(versionsDir) Then
@@ -630,13 +637,25 @@ Refresh:
                                           $"是否直接绑定此云端实例并开始增量同步？"
                                 If MyMsgBox(msg, "发现可同步的云端实例", "绑定并同步", "忽略") = 1 Then
                                     ' 写入绑定信息
-                                    Setup.Set("MinePannelInstanceId", m.CloudInfo.InstanceId)
-                                    Setup.Set("MinePannelInstanceName", m.CloudInfo.InstanceId)
-                                    ' 执行增量同步
-                                    Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={m.CloudInfo.InstanceId}"
-                                    Dim instanceDir As String = McInstanceSelected.PathInstance
-                                    ModMinePannel.IncrementalSync(manifestUrl, instanceDir)
-                                    Hint("云端实例已成功绑定，并且增量同步已启动！", HintType.Finish)
+                                    Setup.Set("MinePannelInstanceId", m.CloudInfo.InstanceId, False, McInstanceSelected)
+                                    Setup.Set("MinePannelInstanceName", m.CloudInfo.InstanceId, False, McInstanceSelected)
+                                    ' 在后台线程执行增量同步，避免阻塞 UI
+                                    Dim capturedInstanceId As String = m.CloudInfo.InstanceId
+                                    Dim capturedInstanceDir As String = McInstanceSelected.PathInstance
+                                    Hint("正在执行增量同步...", HintType.Info)
+                                    RunInNewThread(
+                                    Sub()
+                                        Dim manifestUrl As String = $"{ModCloudAuth.CloudServerUrl}/api/v1/sync/info?id={capturedInstanceId}"
+                                        Dim success As Boolean = ModMinePannel.IncrementalSync(manifestUrl, capturedInstanceDir)
+                                        RunInUi(
+                                        Sub()
+                                            If success Then
+                                                Hint("云端实例已成功绑定，并且增量同步已完成！", HintType.Finish)
+                                            Else
+                                                Hint("增量同步失败或已跳过，请检查日志", HintType.Critical)
+                                            End If
+                                        End Sub)
+                                    End Sub, "Cloud Bind Incremental Sync")
                                 End If
                             Finally
                                 waitHandle.Set()
@@ -734,9 +753,18 @@ Refresh:
     End Sub
 
     Private Sub BtnCloudRefresh_Click(sender As Object, e As EventArgs) Handles BtnCloudRefresh.Click
+        RunCloudSync(showHint:=True)
+    End Sub
+
+    ''' <summary>
+    ''' 执行完整的云端同步流程（获取实例列表 + 检查本地更新）。
+    ''' </summary>
+    ''' <param name="showHint">是否在 UI 上显示提示框</param>
+    Private Sub RunCloudSync(showHint As Boolean)
         If String.IsNullOrEmpty(ModCloudAuth.CloudServerUrl) Then Return
         
-        Hint("正在同步云端状态...", HintType.Info)
+        If showHint Then Hint("正在同步云端状态...", HintType.Info)
+        
         RunInNewThread(
         Sub()
             ' 1. 获取最新的云端实例列表
@@ -768,7 +796,7 @@ Refresh:
                             updatedCount += 1
                         End If
                     Catch ex As Exception
-                        Log(ex, $"刷新时更新本地实例 {gameName} 失败", LogLevel.Developer)
+                        Log(ex, $"同步时更新本地实例 {gameName} 失败", LogLevel.Developer)
                     End Try
                 End If
             Next
@@ -784,20 +812,22 @@ Refresh:
                 If instances IsNot Nothing AndAlso instances.Count > 0 Then
                     _CurrentCloudInstances = instances
                     RefreshCloudCards()
-                    If updatedCount > 0 Then
-                        Hint($"云端状态对齐完成！已拉取 {updatedCount} 个本地实例的更新。", HintType.Finish)
-                    Else
-                        Hint("云端状态对齐完成！目前都是最新版本。", HintType.Finish)
+                    If showHint Then
+                        If updatedCount > 0 Then
+                            Hint($"云端状态对齐完成！已拉取 {updatedCount} 个本地实例的更新。", HintType.Finish)
+                        Else
+                            Hint("云端状态对齐完成！目前都是最新版本。", HintType.Finish)
+                        End If
                     End If
                 ElseIf String.IsNullOrEmpty(errorMsg) Then
                     _CurrentCloudInstances = instances
                     RefreshCloudCards()
-                    Hint("刷新完成，云端服务器暂无可用实例。", HintType.Info)
+                    If showHint Then Hint("刷新完成，云端服务器暂无可用实例。", HintType.Info)
                 Else
-                    Hint("刷新失败：" & errorMsg, HintType.Critical)
+                    If showHint Then Hint("同步失败：" & errorMsg, HintType.Critical)
                 End If
             End Sub)
-        End Sub, "Fetch Cloud Instances")
+        End Sub, "Cloud Full Sync")
     End Sub
 
     Private Sub BtnCloudDisconnect_Click(sender As Object, e As EventArgs) Handles BtnCloudDisconnect.Click

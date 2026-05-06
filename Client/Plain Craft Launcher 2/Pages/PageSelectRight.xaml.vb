@@ -482,16 +482,16 @@ Public Class PageSelectRight
                     Return
                 End If
                 Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(ModCloudAuth.CloudServerUrl)
-                RunInUi(Sub() DoMarkSingleInstance(instance, cloudInfoList))
+                DoMarkSingleInstance(instance, cloudInfoList)
             End Sub, "Cloud Connect for Mark")
             Return
         End If
 
-        ' Already connected — fetch cloud info in background then mark
+        ' Already connected — fetch cloud info and mark in background
         RunInNewThread(
         Sub()
             Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(ModCloudAuth.CloudServerUrl)
-            RunInUi(Sub() DoMarkSingleInstance(instance, cloudInfoList))
+            DoMarkSingleInstance(instance, cloudInfoList)
         End Sub, "Cloud Fetch for Mark")
     End Sub
 
