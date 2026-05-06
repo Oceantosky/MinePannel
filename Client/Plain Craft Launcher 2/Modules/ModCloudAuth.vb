@@ -182,6 +182,9 @@ Friend Module ModCloudAuth
 
 #Region "预授权对话框"
 
+    Private _isPreAuthDialogShowing As Boolean = False
+    Private _preAuthDialogLock As New Object()
+
     ''' <summary>
     ''' 显示预授权密钥输入对话框并执行绑定。
     ''' </summary>
@@ -191,40 +194,52 @@ Friend Module ModCloudAuth
         If String.IsNullOrEmpty(serverUrl) Then serverUrl = CloudServerUrl
         If String.IsNullOrEmpty(serverUrl) Then Return False
 
-        Dim keyCode As String = ""
-        RunInUiWait(Sub()
-            keyCode = MyMsgBoxInput(
-                Title:="云端设备认证",
-                Text:="该服务器要求进行设备授权认证。请输入管理员发给您的预授权密钥：",
-                HintText:="CLOUD-XXXX-XXXX-XXXX",
-                Button1:="绑定",
-                Button2:="取消",
-                ValidateRules:=New ObjectModel.Collection(Of Validate) From {
-                    New ValidateRegex(
-                        "^(CLOUD-?)?[A-Fa-f0-9]{4}-?[A-Fa-f0-9]{4}-?[A-Fa-f0-9]{4}$",
-                        "预授权密钥格式不正确，应为 CLOUD-XXXX-XXXX-XXXX"
-                    )
-                }
-            )
-        End Sub)
+        SyncLock _preAuthDialogLock
+            If _isPreAuthDialogShowing Then Return False
+            If IsBound Then Return True ' 已经被其他线程绑定
+            _isPreAuthDialogShowing = True
+        End SyncLock
 
-        If String.IsNullOrEmpty(keyCode) Then
-            Log("[CloudAuth] 用户取消了密钥输入")
-            Return False
-        End If
+        Try
+            Dim keyCode As String = ""
+            RunInUiWait(Sub()
+                keyCode = MyMsgBoxInput(
+                    Title:="云端设备认证",
+                    Text:="该服务器要求进行设备授权认证。请输入管理员发给您的预授权密钥：",
+                    HintText:="CLOUD-XXXX-XXXX-XXXX",
+                    Button1:="绑定",
+                    Button2:="取消",
+                    ValidateRules:=New ObjectModel.Collection(Of Validate) From {
+                        New ValidateRegex(
+                            "^(CLOUD-?)?[A-Fa-f0-9]{4}-?[A-Fa-f0-9]{4}-?[A-Fa-f0-9]{4}$",
+                            "预授权密钥格式不正确，应为 CLOUD-XXXX-XXXX-XXXX"
+                        )
+                    }
+                )
+            End Sub)
 
-        Dim errorMsg As String = ""
-        Dim token As String = BindDevice(keyCode, errorMsg, serverUrl)
-
-        RunInUiWait(Sub()
-            If Not String.IsNullOrEmpty(token) Then
-                MyMsgBox("设备认证成功！您现在可以获取云端实例了。", "认证成功")
-            Else
-                MyMsgBox("认证失败：" & errorMsg, "认证失败", IsWarn:=True)
+            If String.IsNullOrEmpty(keyCode) Then
+                Log("[CloudAuth] 用户取消了密钥输入")
+                Return False
             End If
-        End Sub)
 
-        Return Not String.IsNullOrEmpty(token)
+            Dim errorMsg As String = ""
+            Dim token As String = BindDevice(keyCode, errorMsg, serverUrl)
+
+            RunInUiWait(Sub()
+                If Not String.IsNullOrEmpty(token) Then
+                    MyMsgBox("设备认证成功！您现在可以获取云端实例了。", "认证成功")
+                Else
+                    MyMsgBox("认证失败：" & errorMsg, "认证失败", IsWarn:=True)
+                End If
+            End Sub)
+
+            Return Not String.IsNullOrEmpty(token)
+        Finally
+            SyncLock _preAuthDialogLock
+                _isPreAuthDialogShowing = False
+            End SyncLock
+        End Try
     End Function
 
     ''' <summary>
