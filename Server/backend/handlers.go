@@ -215,8 +215,22 @@ func nodesStatusHandler(w http.ResponseWriter, r *http.Request) {
 	sendSuccess(w, statuses)
 }
 
+func maskKey(key string) string {
+	if key == "" {
+		return ""
+	}
+	if len(key) <= 4 {
+		return "****"
+	}
+	return "****" + key[len(key)-4:]
+}
+
 func configReadHandler(w http.ResponseWriter, r *http.Request) {
-	sendSuccess(w, s.Config())
+	cfg := s.Config()
+	cfg.SecretKey = maskKey(cfg.SecretKey)
+	cfg.JWTSecret = maskKey(cfg.JWTSecret)
+	cfg.PreAuthSecret = maskKey(cfg.PreAuthSecret)
+	sendSuccess(w, cfg)
 }
 
 func publicConfigHandler(w http.ResponseWriter, r *http.Request) {
@@ -245,12 +259,12 @@ func configWriteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	oldSecretKey := s.Config().SecretKey
 
-	// Preserve existing JWTSecret if none provided to prevent lockout
-	if c.JWTSecret == "" {
+	// Preserve existing JWTSecret if none provided or unchanged (masked)
+	if c.JWTSecret == "" || c.JWTSecret == maskKey(s.Config().JWTSecret) {
 		c.JWTSecret = s.Config().JWTSecret
 	}
-	// Preserve existing PreAuthSecret if none provided
-	if c.PreAuthSecret == "" {
+	// Preserve existing PreAuthSecret if none provided or unchanged (masked)
+	if c.PreAuthSecret == "" || c.PreAuthSecret == maskKey(s.Config().PreAuthSecret) {
 		c.PreAuthSecret = s.Config().PreAuthSecret
 	}
 	// Preserve fields that shouldn't be overwritten by SettingsView

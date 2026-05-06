@@ -189,9 +189,10 @@ Friend Module ModMinePannel
 
             ' 5. 保存版本信息
             If success AndAlso pclInfo IsNot Nothing Then
-                CloudLastSyncedVersion = pclInfo.Version
+                Dim normalizedDir As String = instanceDir.TrimEnd("\"c, "/"c).ToLowerInvariant()
+                _syncedVersions(normalizedDir) = pclInfo.Version
                 If Not String.IsNullOrEmpty(pclInfo.SyncUrl) Then
-                    CloudManifestUrl = pclInfo.SyncUrl
+                    _manifestUrls(normalizedDir) = pclInfo.SyncUrl
                 End If
             End If
 
@@ -333,7 +334,7 @@ Friend Module ModMinePannel
             End If
 
             ' 6. 保存版本
-            CloudLastSyncedVersion = manifest.VersionID
+            _syncedVersions(instanceDir.TrimEnd("\"c, "/"c).ToLowerInvariant()) = manifest.VersionID
 
             ' 7. 清理
             If Directory.Exists(tempDir) Then Directory.Delete(tempDir, True)
@@ -489,11 +490,25 @@ Friend Module ModMinePannel
 
 #Region "工具方法"
 
-    ''' <summary>上次同步的版本号</summary>
-    Public CloudLastSyncedVersion As String = ""
+    ''' <summary>每个实例的上次同步版本号（按实例目录索引）</summary>
+    Private _syncedVersions As New Dictionary(Of String, String)()
 
-    ''' <summary>Manifest 增量同步地址</summary>
-    Public CloudManifestUrl As String = ""
+    ''' <summary>每个实例的 Manifest 增量同步地址（按实例目录索引）</summary>
+    Private _manifestUrls As New Dictionary(Of String, String)()
+
+    ''' <summary>获取指定实例的上次同步版本号</summary>
+    Public Function GetSyncedVersion(instanceDir As String) As String
+        Dim normalized As String = instanceDir.TrimEnd("\"c, "/"c).ToLowerInvariant()
+        If _syncedVersions.TryGetValue(normalized, Nothing) Then Return _syncedVersions(normalized)
+        Return ""
+    End Function
+
+    ''' <summary>获取指定实例的 Manifest URL</summary>
+    Public Function GetManifestUrl(instanceDir As String) As String
+        Dim normalized As String = instanceDir.TrimEnd("\"c, "/"c).ToLowerInvariant()
+        If _manifestUrls.TryGetValue(normalized, Nothing) Then Return _manifestUrls(normalized)
+        Return ""
+    End Function
 
 
 #End Region

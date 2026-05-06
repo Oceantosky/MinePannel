@@ -8,6 +8,7 @@ type NodeConfig struct {
 	DisplayName string `json:"display_name"`
 	IP          string `json:"ip"`
 	Flag        string `json:"flag"`
+	IsMaster    bool   `json:"is_master"`
 }
 
 // Config is the server configuration.

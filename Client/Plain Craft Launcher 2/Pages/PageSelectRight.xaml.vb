@@ -477,40 +477,29 @@ Public Class PageSelectRight
                 Dim errorMsg As String = ""
                 Dim cloudInstances As List(Of ModCloudDiscovery.CloudInstance) = Nothing
                 Dim success As Boolean = ModCloudDiscovery.ConnectAndFetchInstances(domain, cloudInstances, errorMsg)
-                RunInUi(
-                Sub()
-                    If Not success Then
-                        Hint("连接失败：" & errorMsg, HintType.Critical)
-                    Else
-                        DoMarkSingleInstance(instance)
-                    End If
-                End Sub)
+                If Not success Then
+                    RunInUi(Sub() Hint("连接失败：" & errorMsg, HintType.Critical))
+                    Return
+                End If
+                Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(ModCloudAuth.CloudServerUrl)
+                RunInUi(Sub() DoMarkSingleInstance(instance, cloudInfoList))
             End Sub, "Cloud Connect for Mark")
             Return
         End If
 
-        DoMarkSingleInstance(instance)
+        ' Already connected — fetch cloud info in background then mark
+        RunInNewThread(
+        Sub()
+            Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(ModCloudAuth.CloudServerUrl)
+            RunInUi(Sub() DoMarkSingleInstance(instance, cloudInfoList))
+        End Sub, "Cloud Fetch for Mark")
     End Sub
 
     ''' <summary>执行单个实例的云同步标记逻辑</summary>
-    Private Shared Sub DoMarkSingleInstance(instance As McInstance)
-        Dim serverUrl As String = ModCloudAuth.CloudServerUrl
-        If String.IsNullOrEmpty(serverUrl) Then
-            Dim domain As String = MyMsgBoxInput("连接到云端服务器", "此实例尚未连接到任何云端，请输入你要连接的服务器域名或 IP 地址：", 
-                HintText:="例如: mc.example.com", Button1:="连接", Button2:="取消")
-            If String.IsNullOrEmpty(domain) Then Return
-            domain = domain.Trim()
-            If String.IsNullOrEmpty(domain) Then Return
-            
-            Hint("正在连接...", HintType.Info)
-            Dim errorMsg As String = ""
-            Dim cloudInstances As List(Of ModCloudDiscovery.CloudInstance) = Nothing
-            Dim success As Boolean = ModCloudDiscovery.ConnectAndFetchInstances(domain, cloudInstances, errorMsg)
-            If Not success Then
-                RunInUi(Sub() Hint("连接失败：" & errorMsg, HintType.Critical))
-                Return
-            End If
-            serverUrl = ModCloudAuth.CloudServerUrl
+    Private Shared Sub DoMarkSingleInstance(instance As McInstance, cloudInfoList As List(Of ModCloudInfo.CloudInfo))
+        If cloudInfoList Is Nothing OrElse cloudInfoList.Count = 0 Then
+            RunInUi(Sub() Hint("未在服务器上找到任何可用的云端实例", HintType.Info))
+            Return
         End If
 
         RunInNewThread(
@@ -519,12 +508,6 @@ Public Class PageSelectRight
                 Dim localPack = ModCloudInfo.GenerateLocalInfo(instance.PathInstance)
                 If localPack Is Nothing Then
                     RunInUi(Sub() Hint("该实例没有 mods 目录，无法标记为云端同步", HintType.Info))
-                    Return
-                End If
-
-                Dim cloudInfoList = ModCloudMatch.FetchCloudInfoList(serverUrl)
-                If cloudInfoList Is Nothing OrElse cloudInfoList.Count = 0 Then
-                    RunInUi(Sub() Hint("未在服务器上找到任何可用的云端实例", HintType.Info))
                     Return
                 End If
 

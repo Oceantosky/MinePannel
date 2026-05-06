@@ -244,14 +244,15 @@ func copyFile(src, dst string) error {
 // M2: getMasterIP logic is fragile — assumes "not me = master".
 // Should use explicit role field in types.NodeConfig instead.
 func getMasterIP() string {
+	// Primary: explicit IsMaster flag
 	for _, node := range s.Config().Nodes {
-		if node.Name == "master" || node.DisplayName == "Master" {
+		if node.IsMaster {
 			return node.IP
 		}
 	}
-	// Fallback to old behavior
+	// Fallback: legacy name-based heuristic (backward compatible)
 	for _, node := range s.Config().Nodes {
-		if node.IP != s.Config().PublicIP {
+		if node.Name == "master" || node.DisplayName == "Master" {
 			return node.IP
 		}
 	}
